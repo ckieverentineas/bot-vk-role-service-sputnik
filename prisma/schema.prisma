@@ -1,0 +1,24 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["fullTextSearch", "fullTextIndex"]
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Account {
+  id          Int           @id @default(autoincrement())
+  idvk        Int
+  id_role     Int           @default(1)
+  crdate      DateTime      @default(now())
+  Blank Blank[]
+}
+
+model Blank {
+  id          Int           @id @default(autoincrement())
+  text String
+  id_account     Int
+  account        Account          @relation(fields: [id_account], references: [id], onDelete: Cascade)
+}
