@@ -199,7 +199,7 @@ export async function Keyboard_Index(context: any, messa: any) {
     if (await Accessed(context) == `root`) {
         keyboard.textButton({ label: '!операция', payload: { command: 'sliz' }, color: 'negative' }).row()
     } 
-    keyboard.textButton({ label: '!банк', payload: { command: 'sliz' }, color: 'positive' }).row().oneTime()
+    keyboard.textButton({ label: '!спутник', payload: { command: 'sliz' }, color: 'positive' }).row().oneTime()
     // Отправляем клавиатуру без сообщения
     await vk.api.messages.send({ peer_id: context.senderId, random_id: 0, message: `${messa}\u00A0`, keyboard: keyboard })
     .then(async (response: MessagesSendResponse) => { 
@@ -216,7 +216,7 @@ export async function Keyboard_Index(context: any, messa: any) {
 
   // Если последнее сообщение от пользователя и не содержит текст "!банк",
   // помечаем беседу как "говорит"
-  if (lastMessage.from_id !== group_id && lastMessage.text !== '!банк') {
+  if (lastMessage.from_id !== group_id && lastMessage.text !== '!спутник') {
     await vk.api.messages.setActivity({
       type: 'typing',
       peer_id: context.peerId,
