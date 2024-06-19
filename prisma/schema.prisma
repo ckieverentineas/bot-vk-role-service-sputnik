@@ -14,6 +14,7 @@ model Account {
   id_role     Int           @default(1)
   crdate      DateTime      @default(now())
   Blank Blank[]
+  Vision Vision[]
 }
 
 model Blank {
@@ -21,4 +22,13 @@ model Blank {
   text String
   id_account     Int
   account        Account          @relation(fields: [id_account], references: [id], onDelete: Cascade)
+  Vision Vision[]
+}
+
+model Vision {
+  id          Int           @id @default(autoincrement())
+  id_account     Int
+  account        Account          @relation(fields: [id_account], references: [id], onDelete: Cascade)
+  id_blank     Int
+  blank        Blank          @relation(fields: [id_blank], references: [id], onDelete: Cascade)
 }
