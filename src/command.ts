@@ -58,21 +58,21 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
 				}
 			)
 			if (corrected.text == '🚫Назад') {
-				//const blank_skip = await prisma.vision.create({ data: { id_account: user_check.id, id_blank: selector.id } })
 				await Send_Message(user_check.idvk, `✅ Успешная отмена рандомных анкет.`)
 				ender = false
 			}
 			if (corrected.text == '⛔Налево') {
 				//const blank_skip = await prisma.vision.create({ data: { id_account: user_check.id, id_blank: selector.id } })
-				blank_build.slice(target, 1)
+				blank_build.splice(target, 1)
 				await Send_Message(user_check.idvk, `✅ Пропускаем анкету #${selector.id}.`)
 			}
 			if (corrected.text == '✅Направо') {
 				//const blank_skip = await prisma.vision.create({ data: { id_account: user_check.id, id_blank: selector.id } })
-				blank_build.slice(target, 1)
+				blank_build.splice(target, 1)
 				await Send_Message(user_check.idvk, `✅ Анкета #${selector.id} вам зашла, отправляем информацию об этом его/её владельцу.`)
 				const user_nice = await prisma.account.findFirst({ where: { id: selector.id_account } })
-				await Send_Message(user_nice?.idvk ?? user_check.idvk, `🔔 Ваша анкета #${selector.id} понравилась автору следующей анкеты:\n 📜 Анкета: ${selector.id}\n💬 Содержание: ${selector.text}`,
+				const user_blank = await prisma.blank.findFirst({ where: { id_account: user_check.id } })
+				await Send_Message(user_nice?.idvk ?? user_check.idvk, `🔔 Ваша анкета #${selector.id} понравилась автору следующей анкеты:\n 📜 Анкета: ${user_blank?.id}\n💬 Содержание: ${user_blank?.text}`,
 					
 						Keyboard.builder()
 						.textButton({ label: '👍Нраица', payload: { command: 'student' }, color: 'secondary' })
@@ -82,6 +82,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
 				)
 			}
 		}
+		if (blank_build.length == 0) { await Send_Message(user_check.idvk, `😿 Анкеты кончились, приходите позже - масленок.`)}
         await Logger(`In private chat, invite enter in system is viewed by user ${context.senderId}`)
     })
 	// для анкеты
