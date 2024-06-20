@@ -14,14 +14,14 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
 		const user_inf = await User_Info(context)
         const keyboard = new KeyboardBuilder()
     	.textButton({ label: '📃 Моя анкеты', payload: { command: 'card_enter' }, color: 'secondary' }).row()
-    	.textButton({ label: '🔍 Искать как делать нефиг', payload: { command: 'inventory_enter' }, color: 'secondary' }).row()
+    	//.textButton({ label: '🔍 Искать как делать нефиг', payload: { command: 'inventory_enter' }, color: 'secondary' }).row()
 		.textButton({ label: '🎲 Рандом', payload: { command: 'shop_category_enter' }, color: 'positive' }).row()
-    	.textButton({ label: '🌐 Браузер для порно', payload: { command: 'shop_category_enter' }, color: 'positive' }).row()
+    	//.textButton({ label: '🌐 Браузер для порно', payload: { command: 'shop_category_enter' }, color: 'positive' }).row()
     	//.callbackButton({ label: '🎓 Учебля', payload: { command: 'operation_enter' }, color: 'positive' }).row()
     	if (await Accessed(context) != `user`) {
     	    keyboard.callbackButton({ label: '⚙ Админы', payload: { command: 'admin_enter' }, color: 'secondary' })
     	}
-    	keyboard.urlButton({ label: '⚡ Инструкция', url: `https://vk.com/@bank_mm-instrukciya-po-polzovaniu-botom-centrobanka-magomira` }).row()
+    	//keyboard.urlButton({ label: '⚡ Инструкция', url: `https://vk.com/@bank_mm-instrukciya-po-polzovaniu-botom-centrobanka-magomira` }).row()
     	keyboard.textButton({ label: '🚫', payload: { command: 'exit' }, color: 'secondary' }).oneTime().inline()
         if (await prisma.blank.count({ where: { id_account: user_check.id } }) > 1) {
             keyboard.textButton({ label: '🔃👥', payload: { command: 'Согласиться' }, color: 'secondary' })
@@ -40,7 +40,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
 		const blank_build = []
 		for (const blank of await prisma.blank.findMany()) {
 			if (blank.id_account == user_check.id) { continue }
-			const vision_check = await prisma.vision.findFirst({ where: { id_blank: blank.id } })
+			const vision_check = await prisma.vision.findFirst({ where: { id_blank: blank.id, id_account: user_check.id } })
 			if (vision_check) { continue }
 			blank_build.push(blank)
 		}
@@ -62,12 +62,12 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
 				ender = false
 			}
 			if (corrected.text == '⛔Налево') {
-				//const blank_skip = await prisma.vision.create({ data: { id_account: user_check.id, id_blank: selector.id } })
+				const blank_skip = await prisma.vision.create({ data: { id_account: user_check.id, id_blank: selector.id } })
 				blank_build.splice(target, 1)
 				await Send_Message(user_check.idvk, `✅ Пропускаем анкету #${selector.id}.`)
 			}
 			if (corrected.text == '✅Направо') {
-				//const blank_skip = await prisma.vision.create({ data: { id_account: user_check.id, id_blank: selector.id } })
+				const blank_skip = await prisma.vision.create({ data: { id_account: user_check.id, id_blank: selector.id } })
 				blank_build.splice(target, 1)
 				await Send_Message(user_check.idvk, `✅ Анкета #${selector.id} вам зашла, отправляем информацию об этом его/её владельцу.`)
 				const user_nice = await prisma.account.findFirst({ where: { id: selector.id_account } })
@@ -85,7 +85,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
     })
 	hearManager.hear(/👍Нраица|!нраица/, async (context: any) => {
         if (context.peerType == 'chat') { return }
-		console.log(context)
+		//console.log(context)
 		const blank_to = context.messagePayload.blank_to
 		const blank_from = context.messagePayload.blank_from
 		const blank_to_check = await prisma.blank.findFirst({ where: { id: blank_to } })
@@ -94,7 +94,7 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
 		const account_to = await prisma.account.findFirst({ where: { id: blank_to_check.id_account } })
 		const account_from = await prisma.account.findFirst({ where: { id: blank_from_check.id_account } })
 		if (!account_to || !account_from) { return }
-		await Send_Message(account_to.idvk, `🔊 Недавно вам понравилась анкета #${blank_from_check.id}, знайте это взаимно на вашу анкету #${blank_to_check.id}.\n Скорее пишите друг другу в личные сообщения и ловите флешбеки вместе, станьте врагами уже сегодня с https://vk.com/idvk${account_from.idvk} !`)
+		await Send_Message(account_to.idvk, `🔊 Недавно вам понравилась анкета #${blank_from_check.id}, знайте это взаимно на вашу анкету #${blank_to_check.id}.\n Скорее пишите друг другу в личные сообщения и ловите флешбеки вместе, станьте врагами уже сегодня с https://vk.com/id${account_from.idvk} !`)
 		await Send_Message(account_from.idvk, `🔊 Недавно вам понравилась анкета #${blank_to_check.id}, знайте это взаимно на вашу анкету #${blank_from_check.id}.\n Скорее пишите друг другу в личные сообщения и ловите флешбеки вместе, станьте врагами уже сегодня с https://vk.com/id${account_to.idvk} !`)
         await Logger(`In private chat, invite enter in system is viewed by user ${context.senderId}`)
     })
@@ -135,7 +135,9 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
     			.textButton({ label: `⛔Удалить ${blank.id}`, payload: { command: 'card_enter' }, color: 'secondary' }).row()
     			.textButton({ label: `✏Изменить ${blank.id}`, payload: { command: 'inventory_enter' }, color: 'secondary' }).row()
     			keyboard.textButton({ label: '🚫', payload: { command: 'exit' }, color: 'secondary' }).oneTime().inline()
-				await Send_Message(user_check.idvk, `📜 Анкета: ${blank.id}\n💬 Содержание: ${blank.text}`, keyboard)
+				const count_vision = await prisma.vision.count({ where: { id_blank: blank.id } })
+				const count_account = await prisma.account.count({})
+				await Send_Message(user_check.idvk, `📜 Анкета: ${blank.id}\n💬 Содержание: ${blank.text}\n👁 Просмотров: ${count_vision}/${count_account}`, keyboard)
 			}
 		}
         await Logger(`In private chat, invite enter in system is viewed by user ${context.senderId}`)
