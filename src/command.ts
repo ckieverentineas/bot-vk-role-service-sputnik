@@ -73,16 +73,29 @@ export function registerUserRoutes(hearManager: HearManager<IQuestionMessageCont
 				const user_nice = await prisma.account.findFirst({ where: { id: selector.id_account } })
 				const user_blank = await prisma.blank.findFirst({ where: { id_account: user_check.id } })
 				await Send_Message(user_nice?.idvk ?? user_check.idvk, `🔔 Ваша анкета #${selector.id} понравилась автору следующей анкеты:\n 📜 Анкета: ${user_blank?.id}\n💬 Содержание: ${user_blank?.text}`,
-					
 						Keyboard.builder()
-						.textButton({ label: '👍Нраица', payload: { command: 'student' }, color: 'secondary' })
+						.textButton({ label: '👍Нраица', payload: { command: 'student', blank_from: user_blank?.id, blank_to: selector.id }, color: 'secondary' })
 						.textButton({ label: '👎Пошел Нафиг', payload: { command: 'citizen' }, color: 'secondary' }).row()
 						.oneTime().inline()
-					
 				)
 			}
 		}
 		if (blank_build.length == 0) { await Send_Message(user_check.idvk, `😿 Анкеты кончились, приходите позже - масленок.`)}
+        await Logger(`In private chat, invite enter in system is viewed by user ${context.senderId}`)
+    })
+	hearManager.hear(/👍Нраица|!нраица/, async (context: any) => {
+        if (context.peerType == 'chat') { return }
+		console.log(context)
+		const blank_to = context.messagePayload.blank_to
+		const blank_from = context.messagePayload.blank_from
+		const blank_to_check = await prisma.blank.findFirst({ where: { id: blank_to } })
+		const blank_from_check = await prisma.blank.findFirst({ where: { id: blank_from } })
+		if (!blank_to_check || !blank_from_check) { return }
+		const account_to = await prisma.account.findFirst({ where: { id: blank_to_check.id_account } })
+		const account_from = await prisma.account.findFirst({ where: { id: blank_from_check.id_account } })
+		if (!account_to || !account_from) { return }
+		await Send_Message(account_to.idvk, `🔊 Недавно вам понравилась анкета #${blank_from_check.id}, знайте это взаимно на вашу анкету #${blank_to_check.id}.\n Скорее пишите друг другу в личные сообщения и ловите флешбеки вместе, станьте врагами уже сегодня с https://vk.com/idvk${account_from.idvk} !`)
+		await Send_Message(account_from.idvk, `🔊 Недавно вам понравилась анкета #${blank_to_check.id}, знайте это взаимно на вашу анкету #${blank_from_check.id}.\n Скорее пишите друг другу в личные сообщения и ловите флешбеки вместе, станьте врагами уже сегодня с https://vk.com/id${account_to.idvk} !`)
         await Logger(`In private chat, invite enter in system is viewed by user ${context.senderId}`)
     })
 	// для анкеты
