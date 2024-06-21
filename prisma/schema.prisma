@@ -32,3 +32,12 @@ model Vision {
   id_blank     Int
   blank        Blank          @relation(fields: [id_blank], references: [id], onDelete: Cascade)
 }
+
+model Mail {
+  id          Int           @id @default(autoincrement())
+  blank_to Int
+  blank_from Int
+  read Boolean @default(false)
+  status Boolean @default(false)
+  find Boolean @default(true)
+}
