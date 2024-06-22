@@ -5,6 +5,7 @@ import { IQuestionMessageContext } from "vk-io-question";
 import { chat_id, root } from ".";
 import prisma from "./module/prisma";
 import { Accessed, Confirm_User_Success, Logger, Send_Message, User_Info } from "./module/helper";
+import { abusivelist } from "./module/blacklist";
 
 export function commandUserRoutes(hearManager: HearManager<IQuestionMessageContext>): void {
 	hearManager.hear(/!спутник|!Спутник/, async (context: any) => {
@@ -153,7 +154,7 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
 
 				const confirm: { status: boolean, text: String } = await Confirm_User_Success(context, `вы уверены, что хотите пожаловаться на анкету №${blank_check.id}?`)
     			await context.send(`${confirm.text}`)
-    			if (!confirm.status) { return; }
+    			if (!confirm.status) { continue; }
 				/*
 				const mail_set = await prisma.mail.create({ data: { blank_to: selector.id, blank_from: user_blank?.id ?? 0 }})
 				if (mail_set) { await Send_Message(user_nice?.idvk ?? user_check.idvk, `🔔 Ваша анкета #${selector.id} понравилась кому-то, загляните в почту.`) }
@@ -177,7 +178,15 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
 			let text_input = ``
 			await Logger(`(private chat) ~ starting creation self blank by <user> №${context.senderId}`)
 			while (ender) {
-				const corrected = await context.question(`🧷 У вас еще нет анкеты, введите анкету до 4000 символов: \n 💡Вы можете указать: пол, возраст, минимальный порог строк, желаемые жанры или же сюжет... другие нюансы.\n📝 Сейчас заполнено: ${text_input}`,
+				let filters = text_input
+				filters.toLocaleLowerCase()
+				for (const word of abusivelist) {
+					//console.log(word)
+					//console.log(re)
+					filters = filters.replace(new RegExp( word.toLowerCase(), "g" ), `${'*'.repeat(word.length)}`)
+					//console.log(filters)
+				}
+				const corrected = await context.question(`🧷 У вас еще нет анкеты, введите анкету до 4000 символов: \n 💡Вы можете указать: пол, возраст, минимальный порог строк, желаемые жанры или же сюжет... другие нюансы.\n📝 Сейчас заполнено: ${filters}`,
 					{	
 						keyboard: Keyboard.builder()
 						.textButton({ label: '!сохранить', payload: { command: 'student' }, color: 'secondary' })
@@ -193,7 +202,7 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
 					if (corrected.text == '!отмена') {
 						ender = false
 					} else {
-						text_input = corrected.text
+						text_input = corrected.text.replace(/[^а-яА-Я0-9 -+(){}[#№\]=:;.,!?...]/gi, '')
 					}
 				}
 			}
@@ -247,7 +256,15 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
 		let ender = true
 		let text_input = blank_check.text
 		while (ender) {
-			const corrected = await context.question(`🧷 Вы редактируете анкету ${blank_check.id}, напоминаем анкета должна быть до 4000 символов:\n📝 текущая анкета: ${text_input}`,
+			let filters = text_input
+			filters.toLocaleLowerCase()
+			for (const word of abusivelist) {
+				//console.log(word)
+				//console.log(re)
+				filters = filters.replace(new RegExp( word.toLowerCase(), "g" ), `${'*'.repeat(word.length)}`)
+				//console.log(filters)
+			}
+			const corrected = await context.question(`🧷 Вы редактируете анкету ${blank_check.id}, напоминаем анкета должна быть до 4000 символов:\n📝 текущая анкета: ${filters}`,
 				{	
 					keyboard: Keyboard.builder()
 					.textButton({ label: '!сохранить', payload: { command: 'student' }, color: 'secondary' })
@@ -263,7 +280,7 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
 				if (corrected.text == '!отмена') {
 					ender = false
 				} else {
-					text_input = corrected.text
+					text_input = corrected.text.replace(/[^а-яА-Я0-9 -+(){}[#№\]=:;.,!?...]/gi, '')
 				}
 			}
 		}

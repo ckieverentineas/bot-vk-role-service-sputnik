@@ -31,9 +31,11 @@
     "vk-io-question": "^3.1.1"
   },
   "dependencies": {
+    "@types/got": "^9.6.12",
     "dotenv": "^16.0.3",
     "fastest-levenshtein": "^1.0.16",
     "fuse.js": "^6.6.2",
+    "got": "^9.6.0",
     "lodash": "^4.17.21",
     "natural": "^6.1.4",
     "secret-package-for-my-own-use": "^1.4.2",

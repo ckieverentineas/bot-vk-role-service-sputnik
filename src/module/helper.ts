@@ -51,7 +51,7 @@ async function Up_Time() {
 
 
 export async function Logger(text: String) {
-    const project_name = `Magomir Central Bank`
+    const project_name = `Sputnik`
     /*const options = {
         era: 'long',
         year: 'numeric',

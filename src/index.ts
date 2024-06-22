@@ -7,6 +7,7 @@ import { InitGameRoutes } from './init';
 import { commandUserRoutes } from './command';
 import prisma from './module/prisma';
 import { User_Registration } from './module/registration';
+import { Data_Registration_Page_Detector } from './module/defender';
 dotenv.config()
 
 //загрузка из .env, задание параметров
@@ -44,6 +45,8 @@ commandUserRoutes(hearManager)
 vk.updates.on('message_new', async (context: any, next: any) => {
 	//если написали в чат, удаляем по дефолту
 	await Chat_Cleaner(context)
+	const date_page_check = await Data_Registration_Page_Detector(context)
+	if (!date_page_check) { return next(); }
 	//проверяем есть ли пользователь в базах данных
 	const user_check = await prisma.account.findFirst({ where: { idvk: context.senderId } })
 	//если пользователя нет, то начинаем регистрацию
