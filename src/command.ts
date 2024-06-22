@@ -25,7 +25,7 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
 		.textButton({ label: '⚙ Цензура', payload: { command: 'shop_category_enter' }, color: 'negative' }).row()
     	//.textButton({ label: '🌐 Браузер для порно', payload: { command: 'shop_category_enter' }, color: 'positive' }).row()
     	if (await Accessed(context) != `user`) {
-    	    keyboard.callbackButton({ label: '⚙ Админы', payload: { command: 'admin_enter' }, color: 'secondary' })
+    	    keyboard.textButton({ label: '⚖ Модерация', payload: { command: 'admin_enter' }, color: 'secondary' })
     	}
     	//keyboard.urlButton({ label: '⚡ Инструкция', url: `https://vk.com/@bank_mm-instrukciya-po-polzovaniu-botom-centrobanka-magomira` }).row()
     	keyboard.textButton({ label: '🚫', payload: { command: 'exit' }, color: 'secondary' }).oneTime().inline()
@@ -38,6 +38,10 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
         const user_check = await prisma.account.findFirst({ where: { idvk: context.senderId } })
 		const blank_check = await prisma.blank.findFirst({ where: { id_account: user_check?.id } })
         if (!user_check || !blank_check) { return }
+		if (blank_check.banned) {
+			await context.send(`Ваша анкета заблокирована из-за жалоб до разбирательств`)
+			return
+		}
 		const mail_build = []
 		for (const mail of await prisma.mail.findMany({ where: { blank_to: blank_check.id, read: false, find: true } })) {
 			mail_build.push(mail)
@@ -109,7 +113,13 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
 	hearManager.hear(/🎲 Рандом|!рандом/, async (context: any) => {
         if (context.peerType == 'chat') { return }
         const user_check = await prisma.account.findFirst({ where: { idvk: context.senderId } })
+		const blank_check = await prisma.blank.findFirst({ where: { id_account: user_check?.id } })
         if (!user_check) { return }
+		if (!blank_check) { return await context.send(`Создайте анкету`) }
+		if (blank_check.banned) {
+			await context.send(`Ваша анкета заблокирована из-за жалоб до разбирательств`)
+			return
+		}
 		const blank_build = []
 		for (const blank of await prisma.blank.findMany({ where: { banned: false } })) {
 			if (blank.id_account == user_check.id) { continue }
@@ -397,5 +407,66 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
                 }
             }
         }
+    })
+	hearManager.hear(/⚖ Модерация|!модерация/, async (context: any) => {
+		if (context.peerType == 'chat') { return }
+        const user_check = await prisma.account.findFirst({ where: { idvk: context.senderId } })
+		if (!user_check) { return }
+		const blank_check = await prisma.blank.findFirst({ where: { id_account: user_check?.id } })
+        if (await Accessed(context) == 'user') { return }
+		const blank_build = []
+		for (const blank of await prisma.blank.findMany({ where: { banned: true } })) {
+			blank_build.push(blank)
+		}
+		let ender = true
+		await Logger(`(private chat) ~ starting check banned blanks by <admin> №${context.senderId}`)
+		while (ender && blank_build.length > 0) {
+			const target = Math.floor(Math.random() * blank_build.length)
+			const selector = blank_build[target]
+			for (const report of await prisma.report.findMany({ where: { id_blank: selector.id, status: 'wait' } })) {
+				const user = await prisma.account.findFirst({ where: { id: report.id_account } })
+				await context.send(`🗿 Жалоба от @id${user?.idvk}(КрысаХ):\n💬 Заявление: ${report.text}\n\n`)
+			}
+			const user_warned = await prisma.account.findFirst({ where: { id: selector.id_account } })
+			const corrected = await context.question(`⚖ Вершится суд над следующей анкетой и ее автором:\n📜 Анкета: ${selector.id}\n👤 Автор: https://vk.com/id${user_warned?.idvk}\n💬 Содержание: ${selector.text}`,
+				{	
+					keyboard: Keyboard.builder()
+					.textButton({ label: '⛔Отклонить', payload: { command: 'student' }, color: 'secondary' })
+					.textButton({ label: '✅Заверить', payload: { command: 'citizen' }, color: 'secondary' }).row()
+					.textButton({ label: '🚫Назад', payload: { command: 'citizen' }, color: 'secondary' })
+					.oneTime().inline()
+				}
+			)
+			if (corrected.text == '🚫Назад' || corrected.text == '!назад') {
+				await Send_Message(user_check.idvk, `✅ Успешная отмена просмотра заблокированных анкет.`)
+				ender = false
+			}
+			if (corrected.text == '⛔Отклонить' || corrected.text == '!отклонить') {
+				for (const report of await prisma.report.findMany({ where: { id_blank: selector.id, status: 'wait' } })) {
+					await prisma.report.update({ where: { id: report.id }, data: { status: 'denied'}})
+					const user = await prisma.account.findFirst({ where: { id: report.id_account } })
+					await Send_Message(user!.idvk, `⛔ Ваша жалоба на анкету ${selector.id} отклонена.`)
+				}
+				const warn_skip = await prisma.blank.update({ where: { id: selector.id }, data: { banned: false } })
+				blank_build.splice(target, 1)
+				await Send_Message(user_warned!.idvk, `✅ Ваша анкета #${selector.id} была оправдана, доступ разблокирован.`)
+				await Logger(`(private chat) ~ unlock for <blank> #${selector.id} by <admin> №${context.senderId}`)
+				await Send_Message(user_check.idvk, `✅ Оправдали владельца анкеты #${selector.id}`)
+			}
+			if (corrected.text == '✅Заверить' || corrected.text == '!заверить') {
+				for (const report of await prisma.report.findMany({ where: { id_blank: selector.id, status: 'wait' } })) {
+					await prisma.report.update({ where: { id: report.id }, data: { status: 'success'}})
+					const user = await prisma.account.findFirst({ where: { id: report.id_account } })
+					await Send_Message(user!.idvk, `✅ Ваша жалоба на анкету ${selector.id} принята, спасибо за службу.`)
+				}
+				const warn_skip = await prisma.blank.delete({ where: { id: selector.id } })
+				blank_build.splice(target, 1)
+				await Send_Message(user_warned!.idvk, `⛔ Ваша анкета #${selector.id} нарушает правила, она удалена, в следующий раз будьте бдительней, поставили вас на учет.`)
+				await Logger(`(private chat) ~ warn success for <blank> #${selector.id} by <admin> №${context.senderId}`)
+				await Send_Message(user_check.idvk, `✅ Выдали пред владельцу анкеты #${selector.id}`)
+			}
+		}
+		if (blank_build.length == 0) { await Send_Message(user_check.idvk, `😿 Забаненные анкеты кончились, приходите позже.`)}
+        await Logger(`(private chat) ~ finished check banned blanks by <admin> №${context.senderId}`)
     })
 }
