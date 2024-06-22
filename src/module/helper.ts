@@ -9,6 +9,7 @@ export function Sleep(ms: number) {
         setTimeout(resolve, ms);
     });
 }
+//автополучение идвк группы
 export async function Group_Id_Get(token: string) {
 	const vk = new VK({ token: token, apiLimit: 1 });
 	const [group] = await vk.api.groups.getById(vk);
@@ -189,9 +190,6 @@ export async function Keyboard_Index(context: any, messa: any) {
     const user_check: Account | null | undefined = await prisma.account.findFirst({ where: { idvk: context.senderId } })
     if (!user_check) { return }
     const keyboard = new KeyboardBuilder()
-    if (user_check.idvk == root) {
-        keyboard.textButton({ label: 'Лютный переулок', payload: { command: 'sliz' }, color: 'positive' }).row()
-    }
     if (await Accessed(context) != `user`) {
         keyboard.textButton({ label: '!права', payload: { command: 'sliz' }, color: 'negative' }).row()
         keyboard.textButton({ label: '!операции', payload: { command: 'sliz' }, color: 'positive' }).row()
@@ -199,13 +197,13 @@ export async function Keyboard_Index(context: any, messa: any) {
     if (await Accessed(context) == `root`) {
         keyboard.textButton({ label: '!операция', payload: { command: 'sliz' }, color: 'negative' }).row()
     } 
-    keyboard.textButton({ label: '!спутник', payload: { command: 'sliz' }, color: 'positive' }).row().oneTime()
+    keyboard.textButton({ label: '!спутник', payload: { command: 'sliz' }, color: 'primary' }).row().oneTime()
     // Отправляем клавиатуру без сообщения
     await vk.api.messages.send({ peer_id: context.senderId, random_id: 0, message: `${messa}\u00A0`, keyboard: keyboard })
     .then(async (response: MessagesSendResponse) => { 
         await Sleep(1000)
         return vk.api.messages.delete({ message_ids: [response], delete_for_all: 1 }) })
-    .then(() => { Logger(`In a private chat, succes get keyboard is viewed by user ${context.senderId}`) })
+    .then(() => { Logger(`(private chat) ~ succes get keyboard is viewed by <user> №${context.senderId}`) })
     .catch((error) => { console.error(`User ${context.senderId} fail get keyboard: ${error}`) });
 
     // Получаем последнее сообщение из истории беседы
@@ -233,4 +231,16 @@ export async function Keyboard_Index(context: any, messa: any) {
 export async function User_Info(context: any) {
     let [userData]= await vk.api.users.get({user_id: context.senderId});
     return userData
+}
+
+export async function Chat_Cleaner(context: any) {
+    if (context.peerType == 'chat') { 
+		try { 
+			await vk.api.messages.delete({'peer_id': context.peerId, 'delete_for_all': 1, 'cmids': context.conversationMessageId, 'group_id': group_id})
+			await Logger(`(public chat) ~ received a message from the <user> #${context.senderId} and was deleted by <system> №0`)
+		} catch (error) { 
+			await Logger(`(public chat) ~ received a message from the <user> #${context.senderId} and wasn't deleted by <system> №0`)
+		}  
+		return
+	}
 }
