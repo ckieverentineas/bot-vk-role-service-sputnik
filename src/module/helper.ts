@@ -108,7 +108,7 @@ export async function Edit_Message(context: any, message: string, keyboard?: Key
 }
 export async function Confirm_User_Success(context: any, text: string) {
     let res = { status: false, text: `` }
-    const confirmq = await context.question(`⁉ Вы уверены, что хотите ${text}`,
+    const confirmq: any = await context.question(`⁉ Вы уверены, что хотите ${text}`,
         {
             keyboard: Keyboard.builder()
             .textButton({ label: 'Да', payload: { command: 'confirm' }, color: 'secondary' })

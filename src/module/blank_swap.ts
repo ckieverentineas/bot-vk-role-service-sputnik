@@ -31,7 +31,7 @@ export async function Blank_Report(context: any, user_check: Account, selector: 
 	await Logger(`(private chat) ~ starting report writing on <blank> #${selector.id} by <user> №${context.senderId}`)
 	while (ender2) {
 		let censored = user_check.censored ? await Censored_Activation(text_input) : text_input
-		const corrected = await context.question(`🧷 Введите причину жалобы от 10 до 200 символов:\n📝 Указана причина: ${censored}`,
+		const corrected: any = await context.question(`🧷 Введите причину жалобы от 10 до 200 символов:\n📝 Указана причина: ${censored}`,
 			{	
 				keyboard: Keyboard.builder()
 				.textButton({ label: '!сохранить', payload: { command: 'student' }, color: 'secondary' })
@@ -76,7 +76,7 @@ export async function Blank_Browser(context: any, user_check: Account) {
 	await Logger(`(private chat) ~ starting browser writing prompt by <user> №${context.senderId}`)
 	while (ender2) {
 		let censored = user_check.censored ? await Censored_Activation(text_input) : text_input
-		const corrected = await context.question(`🧷 Введите промпт для поиска анкеты от 10 до 200 символов:\n📝 Текущий запрос: ${censored}`,
+		const corrected: any = await context.question(`🧷 Введите промпт для поиска анкеты от 10 до 200 символов:\n📝 Текущий запрос: ${censored}`,
 			{	
 				keyboard: Keyboard.builder()
 				.textButton({ label: '!сохранить', payload: { command: 'student' }, color: 'secondary' })

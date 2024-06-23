@@ -6,7 +6,7 @@ import { answerTimeLimit, chat_id, root, timer_text, vk } from ".";
 import prisma from "./module/prisma";
 import { Accessed, Confirm_User_Success, Logger, Match, Researcher_Better_Blank, Send_Message, User_Info } from "./module/helper";
 import { abusivelist, Censored_Activation } from "./module/blacklist";
-import { Account, Blank } from "@prisma/client";
+import { Account, Blank, Mail } from "@prisma/client";
 import { Blank_Browser, Blank_Like, Blank_Report, Blank_Unlike } from "./module/blank_swap";
 import { Keyboard_Swap } from "./module/keyboard";
 
@@ -52,7 +52,7 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
 		await Logger(`(private chat) ~ starting check self mail by <user> №${context.senderId}`)
 		while (ender && mail_build.length > 0) {
 			const target = Math.floor(Math.random() * mail_build.length)
-			const selector = mail_build[target]
+			const selector: Mail = mail_build[target]
 			const blank_to_check = await prisma.blank.findFirst({ where: { id: selector.blank_to } })
 			const blank_from_check = await prisma.blank.findFirst({ where: { id: selector.blank_from } })
 			if (!blank_to_check || !blank_from_check) { 
@@ -70,7 +70,7 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
 				continue
 			}
 			let censored = user_check.censored ? await Censored_Activation(blank_from_check.text) : blank_from_check.text
-			const corrected = await context.question(`🔔 Ваша анкета #${blank_to_check.id} понравилась автору следующей анкеты:\n 📜 Анкета: ${blank_from_check.id}\n💬 Содержание: ${censored}`,
+			const corrected: any = await context.question(`🔔 Ваша анкета #${blank_to_check.id} понравилась автору следующей анкеты:\n 📜 Анкета: ${blank_from_check.id}\n💬 Содержание: ${censored}`,
 				{	
 					keyboard: Keyboard.builder()
 					.textButton({ label: '👎', payload: { command: 'student' }, color: 'secondary' })
@@ -271,7 +271,7 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
 			await Logger(`(private chat) ~ starting creation self blank by <user> №${context.senderId}`)
 			while (ender) {
 				let censored = user_check.censored ? await Censored_Activation(text_input) : text_input
-				const corrected = await context.question(`🧷 У вас еще нет анкеты, введите анкету от 30 до 4000 символов: \n 💡Вы можете указать: пол, возраст, минимальный порог строк, желаемые жанры или же сюжет... другие нюансы.\n📝 Сейчас заполнено: ${censored}`,
+				const corrected: any = await context.question(`🧷 У вас еще нет анкеты, введите анкету от 30 до 4000 символов: \n 💡Вы можете указать: пол, возраст, минимальный порог строк, желаемые жанры или же сюжет... другие нюансы.\n📝 Сейчас заполнено: ${censored}`,
 					{	
 						keyboard: Keyboard.builder()
 						.textButton({ label: '!сохранить', payload: { command: 'student' }, color: 'secondary' })
@@ -360,7 +360,7 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
 		let text_input = blank_check.text
 		while (ender) {
 			let censored = user_check.censored ? await Censored_Activation(text_input) : text_input
-			const corrected = await context.question(`🧷 Вы редактируете анкету ${blank_check.id}, напоминаем анкета должна быть до 4000 символов:\n📝 текущая анкета: ${censored}`,
+			const corrected: any = await context.question(`🧷 Вы редактируете анкету ${blank_check.id}, напоминаем анкета должна быть до 4000 символов:\n📝 текущая анкета: ${censored}`,
 				{	
 					keyboard: Keyboard.builder()
 					.textButton({ label: '!сохранить', payload: { command: 'student' }, color: 'secondary' })
@@ -428,13 +428,13 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
 		await Logger(`(private chat) ~ starting check banned blanks by <admin> №${context.senderId}`)
 		while (ender && blank_build.length > 0) {
 			const target = Math.floor(Math.random() * blank_build.length)
-			const selector = blank_build[target]
+			const selector: Blank = blank_build[target]
 			for (const report of await prisma.report.findMany({ where: { id_blank: selector.id, status: 'wait' } })) {
 				const user = await prisma.account.findFirst({ where: { id: report.id_account } })
 				await context.send(`🗿 Жалоба от @id${user?.idvk}(КрысаХ):\n💬 Заявление: ${report.text}\n\n`)
 			}
 			const user_warned = await prisma.account.findFirst({ where: { id: selector.id_account } })
-			const corrected = await context.question(`⚖ Вершится суд над следующей анкетой и ее автором:\n📜 Анкета: ${selector.id}\n👤 Автор: https://vk.com/id${user_warned?.idvk}\n💬 Содержание: ${selector.text}`,
+			const corrected: any = await context.question(`⚖ Вершится суд над следующей анкетой и ее автором:\n📜 Анкета: ${selector.id}\n👤 Автор: https://vk.com/id${user_warned?.idvk}\n💬 Содержание: ${selector.text}`,
 				{	
 					keyboard: Keyboard.builder()
 					.textButton({ label: '⛔Отклонить', payload: { command: 'student' }, color: 'secondary' })
