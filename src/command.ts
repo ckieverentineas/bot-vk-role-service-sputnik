@@ -2,7 +2,7 @@ import { HearManager } from "@vk-io/hear";
 import { randomInt } from "crypto";
 import { Keyboard, KeyboardBuilder } from "vk-io";
 import { IQuestionMessageContext } from "vk-io-question";
-import { chat_id, root, timer_text } from ".";
+import { answerTimeLimit, chat_id, root, timer_text, vk } from ".";
 import prisma from "./module/prisma";
 import { Accessed, Confirm_User_Success, Logger, Researcher_Better_Blank, Send_Message, User_Info } from "./module/helper";
 import { abusivelist, Censored_Activation } from "./module/blacklist";
@@ -76,9 +76,11 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
 					.textButton({ label: '👎', payload: { command: 'student' }, color: 'secondary' })
 					.textButton({ label: '👍', payload: { command: 'citizen' }, color: 'secondary' }).row()
 					.textButton({ label: '🚫Назад', payload: { command: 'citizen' }, color: 'secondary' })
-					.oneTime().inline()
+					.oneTime().inline(),
+					answerTimeLimit
 				}
 			)
+			if (corrected.isTimeout) { return await context.send(`⏰ Время ожидания разбора почты истекло!`) }
 			if (corrected.text == '🚫Назад' || corrected.text == '!назад') {
 				await Send_Message(user_check.idvk, `✅ Успешная отмена просмотра почтового ящика анкет.`)
 				ender = false
@@ -135,7 +137,8 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
 				continue
 			}
 			let censored = user_check.censored ? await Censored_Activation(selector.text) : selector.text
-			const corrected = await context.question(`📜 Анкета: ${selector.id}\n💬 Содержание: ${censored}`, {	keyboard: await Keyboard_Swap(blank_build.length), timer_text })
+			const corrected = await context.question(`📜 Анкета: ${selector.id}\n💬 Содержание: ${censored}`, {	keyboard: await Keyboard_Swap(blank_build.length), answerTimeLimit })
+			if (corrected.isTimeout) { return await context.send(`⏰ Время ожидания случайного поиска анкеты истекло!`) }
 			const config: any = {
 				'⛔ Налево': Blank_Unlike,
 				'✅ Направо': Blank_Like,
@@ -143,7 +146,7 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
 			}
 			if (corrected.text in config) {
 				const commandHandler = config[corrected.text];
-				const ans = await commandHandler(context, user_check, selector, blank_build)
+				const ans = await commandHandler(context, user_check, selector, blank_build, target)
 			} else {
 				if (corrected.text == '🚫 Назад' || corrected.text == '!назад') {
 					await Send_Message(user_check.idvk, `✅ Успешная отмена рандомных анкет.`)
@@ -184,7 +187,8 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
 				continue
 			}
 			let censored = user_check.censored ? await Censored_Activation(selector.text) : selector.text
-			const corrected = await context.question(`📜 Анкета: ${selector.id}\n🔎 Совпадение: ${(selector.score*100).toFixed(2)}%\n💬 Содержание: ${censored}\n`, {	keyboard: await Keyboard_Swap(blank_build.length), timer_text })
+			const corrected = await context.question(`📜 Анкета: ${selector.id}\n🔎 Совпадение: ${(selector.score*100).toFixed(2)}%\n💬 Содержание: ${censored}\n`, {	keyboard: await Keyboard_Swap(blank_build.length), answerTimeLimit })
+			if (corrected.isTimeout) { return await context.send(`⏰ Время ожидания поиска анкеты истекло!`) }
 			const config: any = {
 				'⛔ Налево': Blank_Unlike,
 				'✅ Направо': Blank_Like,
@@ -192,7 +196,7 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
 			}
 			if (corrected.text in config) {
 				const commandHandler = config[corrected.text];
-				const ans = await commandHandler(context, user_check, selector, blank_build)
+				const ans = await commandHandler(context, user_check, selector, blank_build, 0)
 			} else {
 				if (corrected.text == '🚫 Назад' || corrected.text == '!назад') {
 					await Send_Message(user_check.idvk, `✅ Успешная отмена поиска анкет.`)
@@ -235,7 +239,8 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
 				continue
 			}
 			let censored = user_check.censored ? await Censored_Activation(selector.text) : selector.text
-			const corrected = await context.question(`📜 Анкета: ${selector.id}\n🔎 Совпадение: ${(selector.score*100).toFixed(2)}%\n💬 Содержание: ${censored}\n`, {	keyboard: await Keyboard_Swap(blank_build.length), timer_text })
+			const corrected = await context.question(`📜 Анкета: ${selector.id}\n🔎 Совпадение: ${(selector.score*100).toFixed(2)}%\n💬 Содержание: ${censored}\n`, {	keyboard: await Keyboard_Swap(blank_build.length), answerTimeLimit })
+			if (corrected.isTimeout) { return await context.send(`⏰ Время ожидания поиска анкеты истекло!`) }
 			const config: any = {
 				'⛔ Налево': Blank_Unlike,
 				'✅ Направо': Blank_Like,
@@ -243,7 +248,7 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
 			}
 			if (corrected.text in config) {
 				const commandHandler = config[corrected.text];
-				const ans = await commandHandler(context, user_check, selector, blank_build)
+				const ans = await commandHandler(context, user_check, selector, blank_build, 0)
 			} else {
 				if (corrected.text == '🚫 Назад' || corrected.text == '!назад') {
 					await Send_Message(user_check.idvk, `✅ Успешная отмена поиска анкет через  браузер.`)
@@ -271,9 +276,11 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
 						keyboard: Keyboard.builder()
 						.textButton({ label: '!сохранить', payload: { command: 'student' }, color: 'secondary' })
 						.textButton({ label: '!отмена', payload: { command: 'citizen' }, color: 'secondary' })
-						.oneTime().inline()
+						.oneTime().inline(),
+						answerTimeLimit
 					}
 				)
+				if (corrected.isTimeout) { return await context.send(`⏰ Время ожидания создания анкеты истекло!`) }
 				if (corrected.text == '!сохранить') {
 					if (text_input.length < 30) { await context.send(`Анкету от 30 символов надо!`); continue }
 					const save = await prisma.blank.create({ data: { text: text_input, id_account: user_check.id } })
@@ -281,6 +288,7 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
 					ender = false
 				} else {
 					if (corrected.text == '!отмена') {
+						await context.send(`Вы отменили создание анкеты`)
 						ender = false
 					} else {
 						text_input = corrected.text.replace(/[^а-яА-Я0-9ёЁ -+—–(){}[#№\]=:;.,!?...]/gi, '')
@@ -341,6 +349,10 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
 			await context.send(`Ваша анкета заблокирована из-за жалоб до разбирательств`)
 			return
 		}
+		const datenow: any = new Date()
+        const dateold: any = new Date(blank_check.crdate)
+		const timeouter = 86400000
+        if (datenow-dateold > timeouter) { return await context.send(`Анкете больше суток, редактирование запрещено`) }
 		const confirm: { status: boolean, text: String } = await Confirm_User_Success(context, `изменить свою анкету №${blank_check.id}?`)
     	await context.send(`${confirm.text}`)
     	if (!confirm.status) { return; }
@@ -353,9 +365,11 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
 					keyboard: Keyboard.builder()
 					.textButton({ label: '!сохранить', payload: { command: 'student' }, color: 'secondary' })
 					.textButton({ label: '!отмена', payload: { command: 'citizen' }, color: 'secondary' })
-					.oneTime().inline()
+					.oneTime().inline(),
+					answerTimeLimit
 				}
 			)
+			if (corrected.isTimeout) { return await context.send(`⏰ Время ожидания редактирования анкеты истекло!`) }
 			if (corrected.text == '!сохранить') {
 				if (text_input.length < 30) { await context.send(`Анкету от 30 символов надо!`); continue }
 				const blank_edit = await prisma.blank.update({ where: { id: blank_check.id }, data: { text: text_input } })
@@ -363,6 +377,7 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
 				ender = false
 			} else {
 				if (corrected.text == '!отмена') {
+					await context.send(`Вы отменили редактирование анкеты`)
 					ender = false
 				} else {
 					text_input = corrected.text.replace(/[^а-яА-Я0-9ёЁ -+—–(){}[#№\]=:;.,!?...]/gi, '')
@@ -425,9 +440,11 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
 					.textButton({ label: '⛔Отклонить', payload: { command: 'student' }, color: 'secondary' })
 					.textButton({ label: '✅Заверить', payload: { command: 'citizen' }, color: 'secondary' }).row()
 					.textButton({ label: '🚫Назад', payload: { command: 'citizen' }, color: 'secondary' })
-					.oneTime().inline()
+					.oneTime().inline(),
+					answerTimeLimit
 				}
 			)
+			if (corrected.isTimeout) { return await context.send(`⏰ Время ожидания судебной системы истекло!`) }
 			if (corrected.text == '🚫Назад' || corrected.text == '!назад') {
 				await Send_Message(user_check.idvk, `✅ Успешная отмена просмотра заблокированных анкет.`)
 				ender = false
@@ -459,5 +476,15 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
 		}
 		if (blank_build.length == 0) { await Send_Message(user_check.idvk, `😿 Забаненные анкеты кончились, приходите позже.`)}
         await Logger(`(private chat) ~ finished check banned blanks by <admin> №${context.senderId}`)
+    })
+	hearManager.hear(/енотик/, async (context: any) => {
+        if (context.senderId != root) { return }
+        await context.sendDocuments({ value: `./prisma/dev.db`, filename: `dev.db` }, { message: '💡 Открывать на сайте: https://sqliteonline.com/' } );
+        await vk.api.messages.send({
+            peer_id: chat_id,
+            random_id: 0,
+            message: `‼ @id${context.senderId}(Admin) делает бекап баз данных dev.db.`
+        })
+        await Logger(`In private chat, did backup database by admin ${context.senderId}`)
     })
 }

@@ -3,10 +3,11 @@ import { Confirm_User_Success, Logger, Send_Message } from "./helper"
 import prisma from "./prisma"
 import { abusivelist, Censored_Activation } from "./blacklist"
 import { Keyboard } from "vk-io"
+import { answerTimeLimit } from ".."
 
-export async function Blank_Like(context: any, user_check: Account, selector: Blank, blank_build: any) {
+export async function Blank_Like(context: any, user_check: Account, selector: Blank, blank_build: any, target: number) {
     const blank_skip = await prisma.vision.create({ data: { id_account: user_check.id, id_blank: selector.id } })
-	blank_build.splice(0, 1)
+	blank_build.splice(target, 1)
 	await Send_Message(user_check.idvk, `✅ Анкета #${selector.id} вам зашла, отправляем информацию об этом его/её владельцу.`)
 	const user_nice = await prisma.account.findFirst({ where: { id: selector.id_account } })
 	const user_blank = await prisma.blank.findFirst({ where: { id_account: user_check.id } })
@@ -15,13 +16,13 @@ export async function Blank_Like(context: any, user_check: Account, selector: Bl
 	await Logger(`(private chat) ~ clicked swipe for <blank> #${selector.id} by <user> №${context.senderId}`)
     
 }
-export async function Blank_Unlike(context: any, user_check: Account, selector: Blank, blank_build: any) {
+export async function Blank_Unlike(context: any, user_check: Account, selector: Blank, blank_build: any, target: number) {
     const blank_skip = await prisma.vision.create({ data: { id_account: user_check.id, id_blank: selector.id } })
-	blank_build.splice(0, 1)
+	blank_build.splice(target, 1)
 	await Send_Message(user_check.idvk, `✅ Пропускаем анкету #${selector.id}.`)
 	await Logger(`(private chat) ~ clicked unswipe for <blank> #${selector.id} by <user> №${context.senderId}`)
 }
-export async function Blank_Report(context: any, user_check: Account, selector: Blank, blank_build: any) {
+export async function Blank_Report(context: any, user_check: Account, selector: Blank, blank_build: any, target: number) {
     const confirm: { status: boolean, text: String } = await Confirm_User_Success(context, `вы уверены, что хотите пожаловаться на анкету №${selector.id}?`)
     await context.send(`${confirm.text}`)
     if (!confirm.status) { return; }
@@ -35,9 +36,11 @@ export async function Blank_Report(context: any, user_check: Account, selector: 
 				keyboard: Keyboard.builder()
 				.textButton({ label: '!сохранить', payload: { command: 'student' }, color: 'secondary' })
 				.textButton({ label: '!отмена', payload: { command: 'citizen' }, color: 'secondary' })
-				.oneTime().inline()
+				.oneTime().inline(),
+				answerTimeLimit
 			}
 		)
+		if (corrected.isTimeout) { return await context.send(`⏰ Время ожидания ввода жалобы истекло!`) }
 		if (corrected.text == '!сохранить') {
 			if (text_input.length < 10) { await context.send(`Жалобу от 10 символов надо!`); continue }
 			if (text_input.length > 200) { await context.send(`Жалобу до 200 символов надо!`); continue }
@@ -53,10 +56,11 @@ export async function Blank_Report(context: any, user_check: Account, selector: 
 				await Send_Message(user_warn.idvk, `🚫 На вашу анкету #${selector.id} донесли крысы ${counter_warn}/3. Изымаем анкету из поиска до разбирательства модераторами.`)
 			}
 			const blank_skip = await prisma.vision.create({ data: { id_account: user_check.id, id_blank: selector.id } })
-			blank_build.splice(0, 1)
+			blank_build.splice(target, 1)
 			ender2 = false
 		} else {
 			if (corrected.text == '!отмена') {
+				await context.send(`Вы отменили написание жалобы на анкету`)
 				ender2 = false
 			} else {
 				text_input = corrected.text.replace(/[^а-яА-Я0-9ёЁ -+—–(){}[#№\]=:;.,!?...]/gi, '')
@@ -77,9 +81,11 @@ export async function Blank_Browser(context: any, user_check: Account) {
 				keyboard: Keyboard.builder()
 				.textButton({ label: '!сохранить', payload: { command: 'student' }, color: 'secondary' })
 				.textButton({ label: '!отмена', payload: { command: 'citizen' }, color: 'secondary' })
-				.oneTime().inline()
+				.oneTime().inline(),
+				answerTimeLimit
 			}
 		)
+		if (corrected.isTimeout) { await context.send(`⏰ Время ожидания судебной системы истекло!`); return data }
 		if (corrected.text == '!сохранить') {
 			if (text_input.length < 10) { await context.send(`Промпт от 10 символов надо!`); continue }
 			if (text_input.length > 200) { await context.send(`Промпт до 200 символов надо!`); continue }
@@ -88,6 +94,7 @@ export async function Blank_Browser(context: any, user_check: Account) {
 			data.text = text_input
 		} else {
 			if (corrected.text == '!отмена') {
+				await context.send(`Вы отменили ввод промпта для браузера по анкетам`)
 				ender2 = false
 			} else {
 				text_input = corrected.text.replace(/[^а-яА-Я0-9ёЁ -+—–(){}[#№\]=:;.,!?...]/gi, '')
