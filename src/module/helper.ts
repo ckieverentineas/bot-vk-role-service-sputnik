@@ -1,8 +1,10 @@
 import { Keyboard, KeyboardBuilder, PhotoAttachment, VK } from "vk-io";
 import { answerTimeLimit, chat_id, group_id, root, starting_date, vk } from "..";
-import { Account } from "@prisma/client";
+import { Account, Blank } from "@prisma/client";
 import prisma from "./prisma";
 import { MessagesSendResponse } from "vk-io/lib/api/schemas/responses";
+import { compareTwoStrings } from "string-similarity";
+import { DiceCoefficient } from "natural";
 
 export function Sleep(ms: number) {
     return new Promise((resolve) => {
@@ -243,4 +245,29 @@ export async function Chat_Cleaner(context: any) {
 		}  
 		return
 	}
+}
+interface Match {
+    id: number,
+    text: string,
+    id_account: number,
+    score: number
+}
+// Функция для поиска наилучшего совпадения для каждого предложения в query в массиве вопросов sentences
+export async function Researcher_Better_Blank(query: string, sentences: Blank[]): Promise<Match[]> {
+    const matches: Match[] = (await Promise.all(sentences.map(async (sentence) => {
+        /*const jaroWinklerScore = JaroWinklerDistance(query_question, sentence.text, {});
+        //const levenshteinScore = 1 / (levenshteinDistance(query_question, sentence.text) + 1);
+        const cosineScore = compareTwoStrings(query_question, sentence.text);
+        const score = (cosineScore*2 + jaroWinklerScore)/3;*/
+        //const jaroWinklerScore = JaroWinklerDistance(sentence.text, query_question, {});
+        //const levenshteinScore = 1 / (levenshteinDistance(sentence.text, query_question) + 1);
+        //const levenshteinScore2 = 1 / (LevenshteinDistance(sentence.text, query_question) + 1)
+        //const damer = 1 / (DamerauLevenshteinDistance(sentence.text, query_question) + 1);
+        const cosineScore = compareTwoStrings(sentence.text, query);
+        const diceCoefficient = DiceCoefficient(sentence.text, query)
+        const score = (cosineScore*2/* + jaroWinklerScore/2 */+ diceCoefficient*2)/4;
+        //console.log({ question: sentence, score: score, message: query_question, cosineScore, diceCoefficient })
+        return { id: sentence.id, text: sentence.text, id_account: sentence.id_account, score: score };
+    }))).filter((q): q is { id: number, text: string, id_account: number, score: number } => q !== undefined);
+    return matches.sort((a, b) => b.score - a.score);
 }
