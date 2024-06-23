@@ -4,7 +4,7 @@ import { Keyboard, KeyboardBuilder } from "vk-io";
 import { IQuestionMessageContext } from "vk-io-question";
 import { answerTimeLimit, chat_id, root, timer_text, vk } from ".";
 import prisma from "./module/prisma";
-import { Accessed, Confirm_User_Success, Logger, Researcher_Better_Blank, Send_Message, User_Info } from "./module/helper";
+import { Accessed, Confirm_User_Success, Logger, Match, Researcher_Better_Blank, Send_Message, User_Info } from "./module/helper";
 import { abusivelist, Censored_Activation } from "./module/blacklist";
 import { Account, Blank } from "@prisma/client";
 import { Blank_Browser, Blank_Like, Blank_Report, Blank_Unlike } from "./module/blank_swap";
@@ -129,7 +129,7 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
 		await Logger(`(private chat) ~ starting check random blank by <user> №${context.senderId}`)
 		while (ender && blank_build.length > 0) {
 			const target = Math.floor(Math.random() * blank_build.length)
-			const selector = blank_build[target]
+			const selector: Blank = blank_build[target]
 			const blank_check = await prisma.blank.findFirst({ where: { id: selector.id } })
 			if (!blank_check) { 
 				blank_build.splice(target, 1)
@@ -137,7 +137,7 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
 				continue
 			}
 			let censored = user_check.censored ? await Censored_Activation(selector.text) : selector.text
-			const corrected = await context.question(`📜 Анкета: ${selector.id}\n💬 Содержание: ${censored}`, {	keyboard: await Keyboard_Swap(blank_build.length), answerTimeLimit })
+			const corrected: any = await context.question(`📜 Анкета: ${selector.id}\n💬 Содержание: ${censored}`, {	keyboard: await Keyboard_Swap(blank_build.length), answerTimeLimit })
 			if (corrected.isTimeout) { return await context.send(`⏰ Время ожидания случайного поиска анкеты истекло!`) }
 			const config: any = {
 				'⛔ Налево': Blank_Unlike,
@@ -179,7 +179,7 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
 		let ender = true
 		await Logger(`(private chat) ~ starting check random blank by <user> №${context.senderId}`)
 		while (ender && blank_build.length > 0) {
-			const selector = blank_build[0]
+			const selector: Match = blank_build[0]
 			const blank_check = await prisma.blank.findFirst({ where: { id: selector.id } })
 			if (!blank_check) { 
 				blank_build.splice(0, 1)
@@ -187,7 +187,7 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
 				continue
 			}
 			let censored = user_check.censored ? await Censored_Activation(selector.text) : selector.text
-			const corrected = await context.question(`📜 Анкета: ${selector.id}\n🔎 Совпадение: ${(selector.score*100).toFixed(2)}%\n💬 Содержание: ${censored}\n`, {	keyboard: await Keyboard_Swap(blank_build.length), answerTimeLimit })
+			const corrected: any = await context.question(`📜 Анкета: ${selector.id}\n🔎 Совпадение: ${(selector.score*100).toFixed(2)}%\n💬 Содержание: ${censored}\n`, {	keyboard: await Keyboard_Swap(blank_build.length), answerTimeLimit })
 			if (corrected.isTimeout) { return await context.send(`⏰ Время ожидания поиска анкеты истекло!`) }
 			const config: any = {
 				'⛔ Налево': Blank_Unlike,
@@ -231,7 +231,7 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
 		let ender = true
 		await Logger(`(private chat) ~ starting check browser blank by <user> №${context.senderId}`)
 		while (ender && blank_build.length > 0) {
-			const selector = blank_build[0]
+			const selector: Match = blank_build[0]
 			const blank_check = await prisma.blank.findFirst({ where: { id: selector.id } })
 			if (!blank_check) { 
 				blank_build.splice(0, 1)
@@ -239,7 +239,7 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
 				continue
 			}
 			let censored = user_check.censored ? await Censored_Activation(selector.text) : selector.text
-			const corrected = await context.question(`📜 Анкета: ${selector.id}\n🔎 Совпадение: ${(selector.score*100).toFixed(2)}%\n💬 Содержание: ${censored}\n`, {	keyboard: await Keyboard_Swap(blank_build.length), answerTimeLimit })
+			const corrected: any = await context.question(`📜 Анкета: ${selector.id}\n🔎 Совпадение: ${(selector.score*100).toFixed(2)}%\n💬 Содержание: ${censored}\n`, {	keyboard: await Keyboard_Swap(blank_build.length), answerTimeLimit })
 			if (corrected.isTimeout) { return await context.send(`⏰ Время ожидания поиска анкеты истекло!`) }
 			const config: any = {
 				'⛔ Налево': Blank_Unlike,
