@@ -246,7 +246,7 @@ export async function Chat_Cleaner(context: any) {
 		return
 	}
 }
-interface Match {
+export interface Match {
     id: number,
     text: string,
     id_account: number,

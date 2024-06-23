@@ -2,11 +2,13 @@ import { HearManager } from "@vk-io/hear";
 import { randomInt } from "crypto";
 import { Keyboard, KeyboardBuilder } from "vk-io";
 import { IQuestionMessageContext } from "vk-io-question";
-import { chat_id, root } from ".";
+import { chat_id, root, timer_text } from ".";
 import prisma from "./module/prisma";
 import { Accessed, Confirm_User_Success, Logger, Researcher_Better_Blank, Send_Message, User_Info } from "./module/helper";
-import { abusivelist } from "./module/blacklist";
+import { abusivelist, Censored_Activation } from "./module/blacklist";
 import { Account, Blank } from "@prisma/client";
+import { Blank_Browser, Blank_Like, Blank_Report, Blank_Unlike } from "./module/blank_swap";
+import { Keyboard_Swap } from "./module/keyboard";
 
 export function commandUserRoutes(hearManager: HearManager<IQuestionMessageContext>): void {
 	hearManager.hear(/!спутник|!Спутник/, async (context: any) => {
@@ -23,7 +25,7 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
     	.textButton({ label: '🔍 Поиск', payload: { command: 'inventory_enter' }, color: 'primary' })
 		.textButton({ label: '🎲 Рандом', payload: { command: 'shop_category_enter' }, color: 'positive' }).row()
 		.textButton({ label: '⚙ Цензура', payload: { command: 'shop_category_enter' }, color: 'negative' })
-    	//.textButton({ label: '🌐 Браузер для порно', payload: { command: 'shop_category_enter' }, color: 'positive' }).row()
+    	.textButton({ label: '🌐 Браузер', payload: { command: 'shop_category_enter' }, color: 'negative' }).row()
     	if (await Accessed(context) != `user`) {
     	    keyboard.textButton({ label: '⚖ Модерация', payload: { command: 'admin_enter' }, color: 'secondary' })
     	}
@@ -67,16 +69,7 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
 				await Send_Message(user_check.idvk, `⚠ Недавно ваша анкета #${blank_to_check?.id} понравилась ролевику с анкетой #${blank_from_check?.id}, но ваc или опоннента больше нет в системе, сообщение было помечено не найденным\n `)
 				continue
 			}
-			let censored = blank_from_check.text
-			if (user_check.censored) {
-				censored = censored.toLocaleLowerCase()
-				for (const word of abusivelist) {
-					//console.log(word)
-					//console.log(re)
-					censored = censored.replace(new RegExp( word.toLowerCase(), "g" ), `${'*'.repeat(word.length)}`)
-					//console.log(filters)
-				}
-			}
+			let censored = user_check.censored ? await Censored_Activation(blank_from_check.text) : blank_from_check.text
 			const corrected = await context.question(`🔔 Ваша анкета #${blank_to_check.id} понравилась автору следующей анкеты:\n 📜 Анкета: ${blank_from_check.id}\n💬 Содержание: ${censored}`,
 				{	
 					keyboard: Keyboard.builder()
@@ -120,7 +113,7 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
 			await context.send(`Ваша анкета заблокирована из-за жалоб до разбирательств`)
 			return
 		}
-		const blank_build = []
+		let blank_build = []
 		let counter = 0
 		for (const blank of await prisma.$queryRaw<Blank[]>`SELECT * FROM Blank WHERE banned = false ORDER BY random() ASC`) {
 			if (blank.id_account == user_check.id) { continue }
@@ -141,99 +134,21 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
 				await Send_Message(user_check.idvk, `⚠ Внимание, следующая анкета была удалена владельцем в процессе просмотра и изьята из поиска:\n\n📜 Анкета: ${selector.id}\n💬 Содержание: ${selector.text}\n `)
 				continue
 			}
-			let censored = selector.text
-			if (user_check.censored) {
-				censored = censored.toLocaleLowerCase()
-				for (const word of abusivelist) {
-					//console.log(word)
-					//console.log(re)
-					censored = censored.replace(new RegExp( word.toLowerCase(), "g" ), `${'*'.repeat(word.length)}`)
-					//console.log(filters)
-				}
+			let censored = user_check.censored ? await Censored_Activation(selector.text) : selector.text
+			const corrected = await context.question(`📜 Анкета: ${selector.id}\n💬 Содержание: ${censored}`, {	keyboard: await Keyboard_Swap(blank_build.length), timer_text })
+			const config: any = {
+				'⛔ Налево': Blank_Unlike,
+				'✅ Направо': Blank_Like,
+				'⚠ Жалоба': Blank_Report,
 			}
-			const corrected = await context.question(`📜 Анкета: ${selector.id}\n💬 Содержание: ${censored}`,
-				{	
-					keyboard: Keyboard.builder()
-					.textButton({ label: '⛔Налево', payload: { command: 'student' }, color: 'secondary' })
-					.textButton({ label: '✅Направо', payload: { command: 'citizen' }, color: 'secondary' }).row()
-					.textButton({ label: '🚫Назад', payload: { command: 'citizen' }, color: 'secondary' }).row()
-					.textButton({ label: `⌛В очереди [${blank_build.length}]`, payload: { command: 'citizen' }, color: 'secondary' }).row()
-					.textButton({ label: '⚠Жалоба', payload: { command: 'citizen' }, color: 'secondary' }).row()
-					.oneTime().inline()
-				}
-			)
-			if (corrected.text == '🚫Назад' || corrected.text == '!назад') {
-				await Send_Message(user_check.idvk, `✅ Успешная отмена рандомных анкет.`)
-				ender = false
-			}
-			if (corrected.text == '⛔Налево' || corrected.text == '!налево') {
-				const blank_skip = await prisma.vision.create({ data: { id_account: user_check.id, id_blank: selector.id } })
-				blank_build.splice(target, 1)
-				await Send_Message(user_check.idvk, `✅ Пропускаем анкету #${selector.id}.`)
-				await Logger(`(private chat) ~ clicked unswipe for <blank> #${selector.id} by <user> №${context.senderId}`)
-			}
-			if (corrected.text == '✅Направо' || corrected.text == '!направо') {
-				const blank_skip = await prisma.vision.create({ data: { id_account: user_check.id, id_blank: selector.id } })
-				blank_build.splice(target, 1)
-				await Send_Message(user_check.idvk, `✅ Анкета #${selector.id} вам зашла, отправляем информацию об этом его/её владельцу.`)
-				const user_nice = await prisma.account.findFirst({ where: { id: selector.id_account } })
-				const user_blank = await prisma.blank.findFirst({ where: { id_account: user_check.id } })
-				const mail_set = await prisma.mail.create({ data: { blank_to: selector.id, blank_from: user_blank?.id ?? 0 }})
-				if (mail_set) { await Send_Message(user_nice?.idvk ?? user_check.idvk, `🔔 Ваша анкета #${selector.id} понравилась кому-то, загляните в почту.`) }
-				await Logger(`(private chat) ~ clicked swipe for <blank> #${selector.id} by <user> №${context.senderId}`)
-			}
-			if (corrected.text == '⚠Жалоба' || corrected.text == '!жалоба') {
-
-				const confirm: { status: boolean, text: String } = await Confirm_User_Success(context, `вы уверены, что хотите пожаловаться на анкету №${blank_check.id}?`)
-    			await context.send(`${confirm.text}`)
-    			if (!confirm.status) { continue; }
-				let ender2 = true
-				let text_input = ``
-				await Logger(`(private chat) ~ starting report writing on <blank> #${selector.id} by <user> №${context.senderId}`)
-				while (ender2) {
-					let censored = text_input
-					if (user_check.censored) {
-						censored = censored.toLocaleLowerCase()
-						for (const word of abusivelist) {
-							//console.log(word)
-							//console.log(re)
-							censored = censored.replace(new RegExp( word.toLowerCase(), "g" ), `${'*'.repeat(word.length)}`)
-							//console.log(filters)
-						}
-					}
-					const corrected = await context.question(`🧷 Введите причину жалобы от 10 до 200 символов:\n📝 Указана причина: ${censored}`,
-						{	
-							keyboard: Keyboard.builder()
-							.textButton({ label: '!сохранить', payload: { command: 'student' }, color: 'secondary' })
-							.textButton({ label: '!отмена', payload: { command: 'citizen' }, color: 'secondary' })
-							.oneTime().inline()
-						}
-					)
-					if (corrected.text == '!сохранить') {
-						if (text_input.length < 10) { await context.send(`Жалобу от 10 символов надо!`); continue }
-						if (text_input.length > 200) { await context.send(`Жалобу до 200 символов надо!`); continue }
-						const report_set = await prisma.report.create({ data: { id_blank: selector.id, id_account: user_check.id, text: text_input }})
-						await Logger(`(private chat) ~ report send about <blank> #${selector.id} by <user> №${context.senderId}`)
-						await Send_Message(user_check.idvk, `✅ Мы зарегистрировали вашу жалобу на анкету #${selector.id}, спасибо за донос!`)
-						const user_warn = await prisma.account.findFirst({ where: { id: selector.id_account } })
-						const counter_warn = await prisma.report.count({ where: { id_blank: selector.id } })
-						if (!user_warn) { return }
-						await Send_Message(user_warn.idvk, `✅ На вашу анкету #${selector.id} донесли крысы! Жалоб ${counter_warn}/3.`)
-						if (counter_warn >= 3) {
-							await prisma.blank.update({ where: { id: selector.id }, data: { banned: true } })
-							await Send_Message(user_warn.idvk, `🚫 На вашу анкету #${selector.id} донесли крысы ${counter_warn}/3. Изымаем анкету из поиска до разбирательства модераторами.`)
-						}
-						const blank_skip = await prisma.vision.create({ data: { id_account: user_check.id, id_blank: selector.id } })
-						blank_build.splice(target, 1)
-						ender2 = false
-					} else {
-						if (corrected.text == '!отмена') {
-							ender2 = false
-						} else {
-							text_input = corrected.text.replace(/[^а-яА-Я0-9ёЁ -+—–(){}[#№\]=:;.,!?...]/gi, '')
-						}
-					}
-				}
+			if (corrected.text in config) {
+				const commandHandler = config[corrected.text];
+				const ans = await commandHandler(context, user_check, selector, blank_build)
+			} else {
+				if (corrected.text == '🚫 Назад' || corrected.text == '!назад') {
+					await Send_Message(user_check.idvk, `✅ Успешная отмена рандомных анкет.`)
+					ender = false
+				} else { await Send_Message(user_check.idvk, `💡 Жмите только по кнопкам с иконками!`) }
 			}
 		}
 		if (blank_build.length == 0) { await Send_Message(user_check.idvk, `😿 Очередь анкет закончилась, попробуйте вызвать !рандом еще раз, иначе приходите позже.`)}
@@ -268,103 +183,76 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
 				await Send_Message(user_check.idvk, `⚠ Внимание, следующая анкета была удалена владельцем в процессе просмотра и изьята из поиска:\n\n📜 Анкета: ${selector.id}\n💬 Содержание: ${selector.text}\n `)
 				continue
 			}
-			let censored = selector.text
-			if (user_check.censored) {
-				censored = censored.toLocaleLowerCase()
-				for (const word of abusivelist) {
-					//console.log(word)
-					//console.log(re)
-					censored = censored.replace(new RegExp( word.toLowerCase(), "g" ), `${'*'.repeat(word.length)}`)
-					//console.log(filters)
-				}
+			let censored = user_check.censored ? await Censored_Activation(selector.text) : selector.text
+			const corrected = await context.question(`📜 Анкета: ${selector.id}\n🔎 Совпадение: ${(selector.score*100).toFixed(2)}%\n💬 Содержание: ${censored}\n`, {	keyboard: await Keyboard_Swap(blank_build.length), timer_text })
+			const config: any = {
+				'⛔ Налево': Blank_Unlike,
+				'✅ Направо': Blank_Like,
+				'⚠ Жалоба': Blank_Report,
 			}
-			const corrected = await context.question(`📜 Анкета: ${selector.id}\n🔎 Совпадение: ${(selector.score*100).toFixed(2)}%\n💬 Содержание: ${censored}\n`,
-				{	
-					keyboard: Keyboard.builder()
-					.textButton({ label: '⛔Налево', payload: { command: 'student' }, color: 'secondary' })
-					.textButton({ label: '✅Направо', payload: { command: 'citizen' }, color: 'secondary' }).row()
-					.textButton({ label: '🚫Назад', payload: { command: 'citizen' }, color: 'secondary' }).row()
-					.textButton({ label: `⌛В очереди [${blank_build.length}]`, payload: { command: 'citizen' }, color: 'secondary' }).row()
-					.textButton({ label: '⚠Жалоба', payload: { command: 'citizen' }, color: 'secondary' }).row()
-					.oneTime().inline()
-				}
-			)
-			if (corrected.text == '🚫Назад' || corrected.text == '!назад') {
-				await Send_Message(user_check.idvk, `✅ Успешная отмена рандомных анкет.`)
-				ender = false
-			}
-			if (corrected.text == '⛔Налево' || corrected.text == '!налево') {
-				const blank_skip = await prisma.vision.create({ data: { id_account: user_check.id, id_blank: selector.id } })
-				blank_build.splice(0, 1)
-				await Send_Message(user_check.idvk, `✅ Пропускаем анкету #${selector.id}.`)
-				await Logger(`(private chat) ~ clicked unswipe for <blank> #${selector.id} by <user> №${context.senderId}`)
-			}
-			if (corrected.text == '✅Направо' || corrected.text == '!направо') {
-				const blank_skip = await prisma.vision.create({ data: { id_account: user_check.id, id_blank: selector.id } })
-				blank_build.splice(0, 1)
-				await Send_Message(user_check.idvk, `✅ Анкета #${selector.id} вам зашла, отправляем информацию об этом его/её владельцу.`)
-				const user_nice = await prisma.account.findFirst({ where: { id: selector.id_account } })
-				const user_blank = await prisma.blank.findFirst({ where: { id_account: user_check.id } })
-				const mail_set = await prisma.mail.create({ data: { blank_to: selector.id, blank_from: user_blank?.id ?? 0 }})
-				if (mail_set) { await Send_Message(user_nice?.idvk ?? user_check.idvk, `🔔 Ваша анкета #${selector.id} понравилась кому-то, загляните в почту.`) }
-				await Logger(`(private chat) ~ clicked swipe for <blank> #${selector.id} by <user> №${context.senderId}`)
-			}
-			if (corrected.text == '⚠Жалоба' || corrected.text == '!жалоба') {
-
-				const confirm: { status: boolean, text: String } = await Confirm_User_Success(context, `вы уверены, что хотите пожаловаться на анкету №${blank_check.id}?`)
-    			await context.send(`${confirm.text}`)
-    			if (!confirm.status) { continue; }
-				let ender2 = true
-				let text_input = ``
-				await Logger(`(private chat) ~ starting report writing on <blank> #${selector.id} by <user> №${context.senderId}`)
-				while (ender2) {
-					let censored = text_input
-					if (user_check.censored) {
-						censored = censored.toLocaleLowerCase()
-						for (const word of abusivelist) {
-							//console.log(word)
-							//console.log(re)
-							censored = censored.replace(new RegExp( word.toLowerCase(), "g" ), `${'*'.repeat(word.length)}`)
-							//console.log(filters)
-						}
-					}
-					const corrected = await context.question(`🧷 Введите причину жалобы от 10 до 200 символов:\n📝 Указана причина: ${censored}`,
-						{	
-							keyboard: Keyboard.builder()
-							.textButton({ label: '!сохранить', payload: { command: 'student' }, color: 'secondary' })
-							.textButton({ label: '!отмена', payload: { command: 'citizen' }, color: 'secondary' })
-							.oneTime().inline()
-						}
-					)
-					if (corrected.text == '!сохранить') {
-						if (text_input.length < 10) { await context.send(`Жалобу от 10 символов надо!`); continue }
-						if (text_input.length > 200) { await context.send(`Жалобу до 200 символов надо!`); continue }
-						const report_set = await prisma.report.create({ data: { id_blank: selector.id, id_account: user_check.id, text: text_input }})
-						await Logger(`(private chat) ~ report send about <blank> #${selector.id} by <user> №${context.senderId}`)
-						await Send_Message(user_check.idvk, `✅ Мы зарегистрировали вашу жалобу на анкету #${selector.id}, спасибо за донос!`)
-						const user_warn = await prisma.account.findFirst({ where: { id: selector.id_account } })
-						const counter_warn = await prisma.report.count({ where: { id_blank: selector.id } })
-						if (!user_warn) { return }
-						await Send_Message(user_warn.idvk, `✅ На вашу анкету #${selector.id} донесли крысы! Жалоб ${counter_warn}/3.`)
-						if (counter_warn >= 3) {
-							await prisma.blank.update({ where: { id: selector.id }, data: { banned: true } })
-							await Send_Message(user_warn.idvk, `🚫 На вашу анкету #${selector.id} донесли крысы ${counter_warn}/3. Изымаем анкету из поиска до разбирательства модераторами.`)
-						}
-						const blank_skip = await prisma.vision.create({ data: { id_account: user_check.id, id_blank: selector.id } })
-						blank_build.splice(0, 1)
-						ender2 = false
-					} else {
-						if (corrected.text == '!отмена') {
-							ender2 = false
-						} else {
-							text_input = corrected.text.replace(/[^а-яА-Я0-9ёЁ -+—–(){}[#№\]=:;.,!?...]/gi, '')
-						}
-					}
-				}
+			if (corrected.text in config) {
+				const commandHandler = config[corrected.text];
+				const ans = await commandHandler(context, user_check, selector, blank_build)
+			} else {
+				if (corrected.text == '🚫 Назад' || corrected.text == '!назад') {
+					await Send_Message(user_check.idvk, `✅ Успешная отмена поиска анкет.`)
+					ender = false
+				} else { await Send_Message(user_check.idvk, `💡 Жмите только по кнопкам с иконками!`) }
 			}
 		}
 		if (blank_build.length == 0) { await Send_Message(user_check.idvk, `😿 Очередь анкет закончилась, попробуйте вызвать !рандом еще раз, иначе приходите позже.`)}
         await Logger(`(private chat) ~ finished check random blank by <user> №${context.senderId}`)
+    })
+	//для браузера
+	hearManager.hear(/🌐 Браузер|!Браузер/, async (context: any) => {
+        if (context.peerType == 'chat') { return }
+        const user_check = await prisma.account.findFirst({ where: { idvk: context.senderId } })
+		const blank_check = await prisma.blank.findFirst({ where: { id_account: user_check?.id } })
+        if (!user_check) { return }
+		if (!blank_check) { return await context.send(`Создайте анкету`) }
+		if (blank_check.banned) {
+			await context.send(`Ваша анкета заблокирована из-за жалоб до разбирательств`)
+			return
+		}
+		let blank_build = []
+		for (const blank of await prisma.$queryRaw<Blank[]>`SELECT * FROM Blank WHERE banned = false ORDER BY random() ASC`) {
+			if (blank.id_account == user_check.id) { continue }
+			const vision_check = await prisma.vision.findFirst({ where: { id_blank: blank.id, id_account: user_check.id } })
+			if (vision_check) { continue }
+			blank_build.push(blank)
+		}
+		const ans = await Blank_Browser(context, user_check)
+		if (!ans.status) { return await context.send(`Вы отменили поиск в браузере`) }
+		blank_build = await Researcher_Better_Blank(ans.text, blank_build)
+		let ender = true
+		await Logger(`(private chat) ~ starting check browser blank by <user> №${context.senderId}`)
+		while (ender && blank_build.length > 0) {
+			const selector = blank_build[0]
+			const blank_check = await prisma.blank.findFirst({ where: { id: selector.id } })
+			if (!blank_check) { 
+				blank_build.splice(0, 1)
+				await Send_Message(user_check.idvk, `⚠ Внимание, следующая анкета была удалена владельцем в процессе просмотра и изьята из поиска:\n\n📜 Анкета: ${selector.id}\n💬 Содержание: ${selector.text}\n `)
+				continue
+			}
+			let censored = user_check.censored ? await Censored_Activation(selector.text) : selector.text
+			const corrected = await context.question(`📜 Анкета: ${selector.id}\n🔎 Совпадение: ${(selector.score*100).toFixed(2)}%\n💬 Содержание: ${censored}\n`, {	keyboard: await Keyboard_Swap(blank_build.length), timer_text })
+			const config: any = {
+				'⛔ Налево': Blank_Unlike,
+				'✅ Направо': Blank_Like,
+				'⚠ Жалоба': Blank_Report,
+			}
+			if (corrected.text in config) {
+				const commandHandler = config[corrected.text];
+				const ans = await commandHandler(context, user_check, selector, blank_build)
+			} else {
+				if (corrected.text == '🚫 Назад' || corrected.text == '!назад') {
+					await Send_Message(user_check.idvk, `✅ Успешная отмена поиска анкет через  браузер.`)
+					ender = false
+				} else { await Send_Message(user_check.idvk, `💡 Жмите только по кнопкам с иконками!`) }
+			}
+		}
+		if (blank_build.length == 0) { await Send_Message(user_check.idvk, `😿 Очередь анкет закончилась, попробуйте вызвать !браузер еще раз, иначе приходите позже.`)}
+        await Logger(`(private chat) ~ finished check browser blank by <user> №${context.senderId}`)
     })
 	// для анкеты
 	hearManager.hear(/📃 Моя анкета|!анкета/, async (context: any) => {
@@ -377,16 +265,7 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
 			let text_input = ``
 			await Logger(`(private chat) ~ starting creation self blank by <user> №${context.senderId}`)
 			while (ender) {
-				let censored = text_input
-				if (user_check.censored) {
-					censored = censored.toLocaleLowerCase()
-					for (const word of abusivelist) {
-						//console.log(word)
-						//console.log(re)
-						censored = censored.replace(new RegExp( word.toLowerCase(), "g" ), `${'*'.repeat(word.length)}`)
-						//console.log(filters)
-					}
-				}
+				let censored = user_check.censored ? await Censored_Activation(text_input) : text_input
 				const corrected = await context.question(`🧷 У вас еще нет анкеты, введите анкету от 30 до 4000 символов: \n 💡Вы можете указать: пол, возраст, минимальный порог строк, желаемые жанры или же сюжет... другие нюансы.\n📝 Сейчас заполнено: ${censored}`,
 					{	
 						keyboard: Keyboard.builder()
@@ -423,16 +302,7 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
 				const count_wrong = await prisma.mail.count({ where: { blank_to: blank.id, read: true, find: false }})
 				const count_unread = await prisma.mail.count({ where: { blank_to: blank.id, read: false }})
 				const counter_warn = await prisma.report.count({ where: { id_blank: blank.id } })
-				let censored = blank.text
-				if (user_check.censored) {
-					censored = censored.toLocaleLowerCase()
-					for (const word of abusivelist) {
-						//console.log(word)
-						//console.log(re)
-						censored = censored.replace(new RegExp( word.toLowerCase(), "g" ), `${'*'.repeat(word.length)}`)
-						//console.log(filters)
-					}
-				}
+				let censored = user_check.censored ? await Censored_Activation(blank.text) : blank.text
 				await Send_Message(user_check.idvk, `📜 Анкета: ${blank.id}\n💬 Содержание: ${censored}\n👁 Просмотров: ${count_vision}/${count_account}\n⚠ Предупреждений: ${counter_warn}/3\n✅ Принятых: ${count_success}\n🚫 Игноров: ${count_ignore}\n⌛ Ожидает: ${count_unread}\n❗ Потеряшек: ${count_wrong}`, keyboard)
 			}
 		}
@@ -477,16 +347,7 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
 		let ender = true
 		let text_input = blank_check.text
 		while (ender) {
-			let censored = text_input
-			if (user_check.censored) {
-				censored = censored.toLocaleLowerCase()
-				for (const word of abusivelist) {
-					//console.log(word)
-					//console.log(re)
-					censored = censored.replace(new RegExp( word.toLowerCase(), "g" ), `${'*'.repeat(word.length)}`)
-					//console.log(filters)
-				}
-			}
+			let censored = user_check.censored ? await Censored_Activation(text_input) : text_input
 			const corrected = await context.question(`🧷 Вы редактируете анкету ${blank_check.id}, напоминаем анкета должна быть до 4000 символов:\n📝 текущая анкета: ${censored}`,
 				{	
 					keyboard: Keyboard.builder()

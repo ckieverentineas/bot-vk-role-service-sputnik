@@ -1,3 +1,13 @@
+export async function Censored_Activation(censored: string) {
+    censored = censored.toLocaleLowerCase() || ' '
+	for (const word of abusivelist) {
+		//console.log(word)
+		//console.log(re)
+		censored = censored.replace(new RegExp( word.toLowerCase() || ' ', "g" ), `${'*'.repeat(word.length)}`)
+		//console.log(filters)
+	}
+    return censored
+}
 export const abusivelist = [
     "6ля",
     "6лядь",
@@ -264,6 +274,7 @@ export const abusivelist = [
     "мандеть",
     "мандища",
     "мандой",
+    "мандося",
     "манду",
     "мандюк",
     "минет",
