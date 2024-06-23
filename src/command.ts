@@ -6,7 +6,7 @@ import { chat_id, root } from ".";
 import prisma from "./module/prisma";
 import { Accessed, Confirm_User_Success, Logger, Send_Message, User_Info } from "./module/helper";
 import { abusivelist } from "./module/blacklist";
-import { Account } from "@prisma/client";
+import { Account, Blank } from "@prisma/client";
 
 export function commandUserRoutes(hearManager: HearManager<IQuestionMessageContext>): void {
 	hearManager.hear(/!спутник|!Спутник/, async (context: any) => {
@@ -121,11 +121,14 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
 			return
 		}
 		const blank_build = []
-		for (const blank of await prisma.blank.findMany({ where: { banned: false } })) {
+		let counter = 0
+		for (const blank of await prisma.$queryRaw<Blank[]>`SELECT * FROM Blank WHERE banned = false ORDER BY random() ASC`) {
 			if (blank.id_account == user_check.id) { continue }
 			const vision_check = await prisma.vision.findFirst({ where: { id_blank: blank.id, id_account: user_check.id } })
 			if (vision_check) { continue }
+			if (counter > 50) { break }
 			blank_build.push(blank)
+			counter++
 		}
 		let ender = true
 		await Logger(`(private chat) ~ starting check random blank by <user> №${context.senderId}`)
@@ -233,7 +236,7 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
 				}
 			}
 		}
-		if (blank_build.length == 0) { await Send_Message(user_check.idvk, `😿 Анкеты кончились, приходите позже.`)}
+		if (blank_build.length == 0) { await Send_Message(user_check.idvk, `😿 Очередь анкет закончилась, попробуйте вызвать !рандом еще раз, иначе приходите позже.`)}
         await Logger(`(private chat) ~ finished check random blank by <user> №${context.senderId}`)
     })
 	// для анкеты
