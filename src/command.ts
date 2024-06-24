@@ -210,7 +210,7 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
         await Logger(`(private chat) ~ finished check random blank by <user> №${context.senderId}`)
     })
 	//для браузера
-	hearManager.hear(/🌐 Браузер|!Браузер/, async (context: any) => {
+	hearManager.hear(/🌐 Браузер|!браузер/, async (context: any) => {
         if (context.peerType == 'chat') { return }
         const user_check = await prisma.account.findFirst({ where: { idvk: context.senderId } })
 		const blank_check = await prisma.blank.findFirst({ where: { id_account: user_check?.id } })
