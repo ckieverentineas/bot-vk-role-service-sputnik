@@ -4,10 +4,10 @@ import { Keyboard, KeyboardBuilder } from "vk-io";
 import { IQuestionMessageContext } from "vk-io-question";
 import { answerTimeLimit, chat_id, root, timer_text, vk } from ".";
 import prisma from "./module/prisma";
-import { Accessed, Confirm_User_Success, Logger, Match, Researcher_Better_Blank, Send_Message, User_Info } from "./module/helper";
-import { abusivelist, Censored_Activation } from "./module/blacklist";
+import { Accessed, Confirm_User_Success, Logger, Match, Researcher_Better_Blank, Researcher_Better_Blank_Target, Send_Message, User_Info } from "./module/helper";
+import { abusivelist, Censored_Activation, Censored_Activation_Pro } from "./module/blacklist";
 import { Account, Blank, Mail } from "@prisma/client";
-import { Blank_Browser, Blank_Like, Blank_Report, Blank_Unlike } from "./module/blank_swap";
+import { Blank_Browser, Blank_Cleaner, Blank_Like, Blank_Report, Blank_Unlike } from "./module/blank_swap";
 import { Keyboard_Swap } from "./module/keyboard";
 
 export function commandUserRoutes(hearManager: HearManager<IQuestionMessageContext>): void {
@@ -69,7 +69,7 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
 				await Send_Message(user_check.idvk, `⚠ Недавно ваша анкета #${blank_to_check?.id} понравилась ролевику с анкетой #${blank_from_check?.id}, но ваc или опоннента больше нет в системе, сообщение было помечено не найденным\n `)
 				continue
 			}
-			let censored = user_check.censored ? await Censored_Activation(blank_from_check.text) : blank_from_check.text
+			let censored = user_check.censored ? await Censored_Activation_Pro(blank_from_check.text) : blank_from_check.text
 			const corrected: any = await context.question(`🔔 Ваша анкета #${blank_to_check.id} понравилась автору следующей анкеты:\n 📜 Анкета: ${blank_from_check.id}\n💬 Содержание: ${censored}`,
 				{	
 					keyboard: Keyboard.builder()
@@ -136,7 +136,7 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
 				await Send_Message(user_check.idvk, `⚠ Внимание, следующая анкета была удалена владельцем в процессе просмотра и изьята из поиска:\n\n📜 Анкета: ${selector.id}\n💬 Содержание: ${selector.text}\n `)
 				continue
 			}
-			let censored = user_check.censored ? await Censored_Activation(selector.text) : selector.text
+			let censored = user_check.censored ? await Censored_Activation_Pro(selector.text) : selector.text
 			const corrected: any = await context.question(`📜 Анкета: ${selector.id}\n💬 Содержание: ${censored}`, {	keyboard: await Keyboard_Swap(blank_build.length), answerTimeLimit })
 			if (corrected.isTimeout) { return await context.send(`⏰ Время ожидания случайного поиска анкеты истекло!`) }
 			const config: any = {
@@ -169,13 +169,15 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
 			return
 		}
 		let blank_build = []
+		await context.send(`⌛ Ожидайте, подбираем анкеты...`)
 		for (const blank of await prisma.$queryRaw<Blank[]>`SELECT * FROM Blank WHERE banned = false ORDER BY random() ASC`) {
 			if (blank.id_account == user_check.id) { continue }
 			const vision_check = await prisma.vision.findFirst({ where: { id_blank: blank.id, id_account: user_check.id } })
 			if (vision_check) { continue }
-			blank_build.push(blank)
+			blank_build.push(await Researcher_Better_Blank_Target(blank_check.text, blank))
+			blank_build.sort((a, b) => b.score - a.score)
+			blank_build.length = Math.min(blank_build.length, 50); 
 		}
-		blank_build = await Researcher_Better_Blank(blank_check.text, blank_build)
 		let ender = true
 		await Logger(`(private chat) ~ starting check random blank by <user> №${context.senderId}`)
 		while (ender && blank_build.length > 0) {
@@ -186,7 +188,7 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
 				await Send_Message(user_check.idvk, `⚠ Внимание, следующая анкета была удалена владельцем в процессе просмотра и изьята из поиска:\n\n📜 Анкета: ${selector.id}\n💬 Содержание: ${selector.text}\n `)
 				continue
 			}
-			let censored = user_check.censored ? await Censored_Activation(selector.text) : selector.text
+			let censored = user_check.censored ? await Censored_Activation_Pro(selector.text) : selector.text
 			const corrected: any = await context.question(`📜 Анкета: ${selector.id}\n🔎 Совпадение: ${(selector.score*100).toFixed(2)}%\n💬 Содержание: ${censored}\n`, {	keyboard: await Keyboard_Swap(blank_build.length), answerTimeLimit })
 			if (corrected.isTimeout) { return await context.send(`⏰ Время ожидания поиска анкеты истекло!`) }
 			const config: any = {
@@ -218,16 +220,19 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
 			await context.send(`Ваша анкета заблокирована из-за жалоб до разбирательств`)
 			return
 		}
+		const ans = await Blank_Browser(context, user_check)
+		if (!ans.status) { return await context.send(`Вы отменили поиск в браузере`) }
 		let blank_build = []
+		await context.send(`⌛ Ожидайте, подбираем анкеты...`)
 		for (const blank of await prisma.$queryRaw<Blank[]>`SELECT * FROM Blank WHERE banned = false ORDER BY random() ASC`) {
 			if (blank.id_account == user_check.id) { continue }
 			const vision_check = await prisma.vision.findFirst({ where: { id_blank: blank.id, id_account: user_check.id } })
 			if (vision_check) { continue }
-			blank_build.push(blank)
+			blank_build.push(await Researcher_Better_Blank_Target(ans.text, blank))
+			blank_build.sort((a, b) => b.score - a.score)
+			blank_build.length = Math.min(blank_build.length, 50); 
 		}
-		const ans = await Blank_Browser(context, user_check)
-		if (!ans.status) { return await context.send(`Вы отменили поиск в браузере`) }
-		blank_build = await Researcher_Better_Blank(ans.text, blank_build)
+		
 		let ender = true
 		await Logger(`(private chat) ~ starting check browser blank by <user> №${context.senderId}`)
 		while (ender && blank_build.length > 0) {
@@ -238,7 +243,7 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
 				await Send_Message(user_check.idvk, `⚠ Внимание, следующая анкета была удалена владельцем в процессе просмотра и изьята из поиска:\n\n📜 Анкета: ${selector.id}\n💬 Содержание: ${selector.text}\n `)
 				continue
 			}
-			let censored = user_check.censored ? await Censored_Activation(selector.text) : selector.text
+			let censored = user_check.censored ? await Censored_Activation_Pro(selector.text) : selector.text
 			const corrected: any = await context.question(`📜 Анкета: ${selector.id}\n🔎 Совпадение: ${(selector.score*100).toFixed(2)}%\n💬 Содержание: ${censored}\n`, {	keyboard: await Keyboard_Swap(blank_build.length), answerTimeLimit })
 			if (corrected.isTimeout) { return await context.send(`⏰ Время ожидания поиска анкеты истекло!`) }
 			const config: any = {
@@ -270,8 +275,8 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
 			let text_input = ``
 			await Logger(`(private chat) ~ starting creation self blank by <user> №${context.senderId}`)
 			while (ender) {
-				let censored = user_check.censored ? await Censored_Activation(text_input) : text_input
-				const corrected: any = await context.question(`🧷 У вас еще нет анкеты, введите анкету от 30 до 4000 символов: \n 💡Вы можете указать: пол, возраст, минимальный порог строк, желаемые жанры или же сюжет... другие нюансы.\n📝 Сейчас заполнено: ${censored}`,
+				let censored = user_check.censored ? await Censored_Activation_Pro(text_input) : text_input
+				const corrected: any = await context.question(`🧷 У вас еще нет анкеты, введите анкету от 30 до 4000 символов, английские символы запрещены: \n 💡Вы можете указать: пол, возраст, минимальный порог строк, желаемые жанры или же сюжет... другие нюансы.\n📝 Сейчас заполнено: ${censored}`,
 					{	
 						keyboard: Keyboard.builder()
 						.textButton({ label: '!сохранить', payload: { command: 'student' }, color: 'secondary' })
@@ -291,7 +296,7 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
 						await context.send(`Вы отменили создание анкеты`)
 						ender = false
 					} else {
-						text_input = corrected.text.replace(/[^а-яА-Я0-9ёЁ -+—–(){}[#№\]=:;.,!?...]/gi, '')
+						text_input = await Blank_Cleaner(corrected.text)
 					}
 				}
 			}
@@ -310,7 +315,7 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
 				const count_wrong = await prisma.mail.count({ where: { blank_to: blank.id, read: true, find: false }})
 				const count_unread = await prisma.mail.count({ where: { blank_to: blank.id, read: false }})
 				const counter_warn = await prisma.report.count({ where: { id_blank: blank.id } })
-				let censored = user_check.censored ? await Censored_Activation(blank.text) : blank.text
+				let censored = user_check.censored ? await Censored_Activation_Pro(blank.text) : blank.text
 				await Send_Message(user_check.idvk, `📜 Анкета: ${blank.id}\n💬 Содержание: ${censored}\n👁 Просмотров: ${count_vision}/${count_account}\n⚠ Предупреждений: ${counter_warn}/3\n✅ Принятых: ${count_success}\n🚫 Игноров: ${count_ignore}\n⌛ Ожидает: ${count_unread}\n❗ Потеряшек: ${count_wrong}`, keyboard)
 			}
 		}
@@ -359,7 +364,7 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
 		let ender = true
 		let text_input = blank_check.text
 		while (ender) {
-			let censored = user_check.censored ? await Censored_Activation(text_input) : text_input
+			let censored = user_check.censored ? await Censored_Activation_Pro(text_input) : text_input
 			const corrected: any = await context.question(`🧷 Вы редактируете анкету ${blank_check.id}, напоминаем анкета должна быть до 4000 символов:\n📝 текущая анкета: ${censored}`,
 				{	
 					keyboard: Keyboard.builder()
@@ -380,7 +385,7 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
 					await context.send(`Вы отменили редактирование анкеты`)
 					ender = false
 				} else {
-					text_input = corrected.text.replace(/[^а-яА-Я0-9ёЁ -+—–(){}[#№\]=:;.,!?...]/gi, '')
+					text_input = await Blank_Cleaner(corrected.text)
 				}
 			}
 		}

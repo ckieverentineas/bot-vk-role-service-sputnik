@@ -8,6 +8,92 @@ export async function Censored_Activation(censored: string) {
 	}
     return censored
 }
+const d: { [key: string]: string[] } = {
+    'а' : ['а', 'a', '@'],
+    'б' : ['б', '6', 'b'],
+    'в' : ['в', 'b', 'v'],
+    'г' : ['г', 'r', 'g'],
+    'д' : ['д', 'd'],
+    'е' : ['е', 'e'],
+    'ё' : ['ё', 'e'],
+    'ж' : ['ж', 'zh', '*'],
+    'з' : ['з', '3', 'z'],
+    'и' : ['и', 'u', 'i'],
+    'й' : ['й', 'u', 'i'],
+    'к' : ['к', 'k', 'i{', '|{'],
+    'л' : ['л', 'l', 'ji'],
+    'м' : ['м', 'm'],
+    'н' : ['н', 'h', 'n'],
+    'о' : ['о', 'o', '0'],
+    'п' : ['п', 'n', 'p'],
+    'р' : ['р', 'r', 'p'],
+    'с' : ['с', 'c', 's'],
+    'т' : ['т', 'm', 't'],
+    'у' : ['у', 'y', 'u'],
+    'ф' : ['ф', 'f'],
+    'х' : ['х', 'x', 'h' , '}{'],
+    'ц' : ['ц', 'c', 'u,'],
+    'ч' : ['ч', 'ch'],
+    'ш' : ['ш', 'sh'],
+    'щ' : ['щ', 'sch'],
+    'ь' : ['ь', 'b'],
+    'ы' : ['ы', 'bi'],
+    'ъ' : ['ъ'],
+    'э' : ['э', 'e'],
+    'ю' : ['ю', 'io'],
+    'я' : ['я', 'ya']
+}
+function distance(a: string, b: string): number {
+    const n: number = a.length;
+    const m: number = b.length;
+    let current_row: number[] = Array.from({ length: n + 1 }, (_, i) => i);
+    for (let i = 1; i <= m; i++) {
+        let previous_row = current_row;
+        current_row = [i].concat(Array.from({ length: n }, () => 0));
+        for (let j = 1; j <= n; j++) {
+            const add: number = previous_row[j] + 1;
+            const del: number = current_row[j - 1] + 1;
+            let change: number = previous_row[j - 1];
+            if (a[j - 1] !== b[i - 1]) {
+                change += 1;
+            }
+            current_row[j] = Math.min(add, del, change);
+        }
+    }
+
+    return current_row[n];
+}
+export async function Censored_Activation_Pro(text: string) {
+    let cleanedText: string = text.toLowerCase().replace(/ /g, '');
+    
+    for (const [key, value] of Object.entries(d)) {
+        for (const letter of value) {
+            for (const phr of cleanedText) {
+                if (letter === phr) {
+                    cleanedText = cleanedText.replace(new RegExp(phr, 'g'), key);
+                }
+            }
+        }
+    }
+
+    let censoredText: string = cleanedText;
+
+    for (const word of abusivelist) {
+        const regex: RegExp = new RegExp(word, 'gi');
+        censoredText = censoredText.replace(regex, '*'.repeat(word.length));
+    }
+
+    let originalText: string = text.split(' ').map((word, index) => {
+        if (censoredText.indexOf(word.toLowerCase().replace(/ /g, '')) !== -1) {
+            return word;
+        } else {
+            return '*'.repeat(word.length);
+            
+        }
+    }).join(' ');
+    return originalText
+    //console.log(originalText); // Выводим текст с восстановленными пробелами и регистром
+}
 export const abusivelist = [
     "6ля",
     "6лядь",

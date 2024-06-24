@@ -1,7 +1,7 @@
 import { Account, Blank } from "@prisma/client"
 import { Confirm_User_Success, Logger, Send_Message } from "./helper"
 import prisma from "./prisma"
-import { abusivelist, Censored_Activation } from "./blacklist"
+import { abusivelist, Censored_Activation, Censored_Activation_Pro } from "./blacklist"
 import { Keyboard } from "vk-io"
 import { answerTimeLimit } from ".."
 
@@ -30,7 +30,7 @@ export async function Blank_Report(context: any, user_check: Account, selector: 
 	let text_input = ``
 	await Logger(`(private chat) ~ starting report writing on <blank> #${selector.id} by <user> №${context.senderId}`)
 	while (ender2) {
-		let censored = user_check.censored ? await Censored_Activation(text_input) : text_input
+		let censored = user_check.censored ? await Censored_Activation_Pro(text_input) : text_input
 		const corrected: any = await context.question(`🧷 Введите причину жалобы от 10 до 200 символов:\n📝 Указана причина: ${censored}`,
 			{	
 				keyboard: Keyboard.builder()
@@ -63,7 +63,7 @@ export async function Blank_Report(context: any, user_check: Account, selector: 
 				await context.send(`Вы отменили написание жалобы на анкету`)
 				ender2 = false
 			} else {
-				text_input = corrected.text.replace(/[^а-яА-Я0-9ёЁ -+—–(){}[#№\]=:;.,!?...]/gi, '')
+				text_input = await Blank_Cleaner(corrected.text)
 			}
 		}
 	}
@@ -75,7 +75,7 @@ export async function Blank_Browser(context: any, user_check: Account) {
 	const data = { text: '', status: false }
 	await Logger(`(private chat) ~ starting browser writing prompt by <user> №${context.senderId}`)
 	while (ender2) {
-		let censored = user_check.censored ? await Censored_Activation(text_input) : text_input
+		let censored = user_check.censored ? await Censored_Activation_Pro(text_input) : text_input
 		const corrected: any = await context.question(`🧷 Введите промпт для поиска анкеты от 10 до 200 символов:\n📝 Текущий запрос: ${censored}`,
 			{	
 				keyboard: Keyboard.builder()
@@ -97,9 +97,17 @@ export async function Blank_Browser(context: any, user_check: Account) {
 				await context.send(`Вы отменили ввод промпта для браузера по анкетам`)
 				ender2 = false
 			} else {
-				text_input = corrected.text.replace(/[^а-яА-Я0-9ёЁ -+—–(){}[#№\]=:;.,!?...]/gi, '')
+				text_input = await Blank_Cleaner(corrected.text)
 			}
 		}
 	}
 	return data
+}
+
+export async function Blank_Cleaner(text: string) {
+	try {
+		return text.replace(/[^а-яА-Я0-9ёЁ \-+—–_()/\\"'`«»{}[#№\]=:;.,!?...\n\r]/gi, '')
+	} catch {
+		return ' '
+	}
 }

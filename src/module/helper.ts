@@ -271,3 +271,18 @@ export async function Researcher_Better_Blank(query: string, sentences: Blank[])
     }))).filter((q): q is { id: number, text: string, id_account: number, score: number } => q !== undefined);
     return matches.sort((a, b) => b.score - a.score);
 }
+export async function Researcher_Better_Blank_Target(query: string, sentence: Blank): Promise<Match> {
+    /*const jaroWinklerScore = JaroWinklerDistance(query_question, sentence.text, {});
+    //const levenshteinScore = 1 / (levenshteinDistance(query_question, sentence.text) + 1);
+    const cosineScore = compareTwoStrings(query_question, sentence.text);
+    const score = (cosineScore*2 + jaroWinklerScore)/3;*/
+    //const jaroWinklerScore = JaroWinklerDistance(sentence.text, query_question, {});
+    //const levenshteinScore = 1 / (levenshteinDistance(sentence.text, query_question) + 1);
+    //const levenshteinScore2 = 1 / (LevenshteinDistance(sentence.text, query_question) + 1)
+    //const damer = 1 / (DamerauLevenshteinDistance(sentence.text, query_question) + 1);
+    const cosineScore = compareTwoStrings(sentence.text, query);
+    const diceCoefficient = DiceCoefficient(sentence.text, query)
+    const score = (cosineScore*2/* + jaroWinklerScore/2 */+ diceCoefficient*2)/4;
+    //console.log({ question: sentence, score: score, message: query_question, cosineScore, diceCoefficient })
+    return { id: sentence.id, text: sentence.text, id_account: sentence.id_account, score: score };
+}
