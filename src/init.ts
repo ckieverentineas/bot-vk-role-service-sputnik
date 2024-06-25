@@ -8,7 +8,7 @@ import { Init_Person } from "./fake_profile";
 import { Logger, Send_Message } from "./module/helper";
 
 export function InitGameRoutes(hearManager: HearManager<IQuestionMessageContext>): void {
-	hearManager.hear(/init/, async (context: any) => {
+	/*hearManager.hear(/!init/, async (context: any) => {
 		if (context.senderId != root) { return }
 		let date = new Date()
 		let counter = 0
@@ -30,4 +30,11 @@ export function InitGameRoutes(hearManager: HearManager<IQuestionMessageContext>
 			}
 		}
 	})
+	hearManager.hear(/!delete/, async (context: any) => {
+		if (context.senderId != root) { return }
+		for (const ank of await prisma.vision.findMany({})) {
+			await prisma.vision.delete({ where: { id: ank.id } })
+		}
+		await context.send(`Все просмотры удалены!`)
+	})*/
 }

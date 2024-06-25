@@ -41,7 +41,17 @@ const d: { [key: string]: string[] } = {
     'ъ' : ['ъ'],
     'э' : ['э', 'e'],
     'ю' : ['ю', 'io'],
-    'я' : ['я', 'ya']
+    'я' : ['я', 'ya'],
+    '0' : ['0'],
+    '1' : ['1'],
+    '2' : ['2'],
+    '3' : ['3'],
+    '4' : ['4'],
+    '5' : ['5'],
+    '6' : ['6'],
+    '7' : ['7'],
+    '8' : ['8'],
+    '9' : ['9']
 }
 function distance(a: string, b: string): number {
     const n: number = a.length;
@@ -75,15 +85,14 @@ export async function Censored_Activation_Pro(text: string) {
             }
         }
     }
-
     let censoredText: string = cleanedText;
 
     for (const word of abusivelist) {
         const regex: RegExp = new RegExp(word, 'gi');
         censoredText = censoredText.replace(regex, '*'.repeat(word.length));
     }
-
     let originalText: string = text.split(' ').map((word, index) => {
+        if (!Number.isNaN(Number(word)) && typeof Number(word) === "number") { return word }
         if (censoredText.indexOf(word.toLowerCase().replace(/ /g, '')) !== -1) {
             return word;
         } else {
@@ -95,13 +104,8 @@ export async function Censored_Activation_Pro(text: string) {
     //console.log(originalText); // Выводим текст с восстановленными пробелами и регистром
 }
 export const abusivelist = [
-    "6ля",
-    "6лядь",
-    "6лять",
-    "b3ъeб",
     "cock",
     "cunt",
-    "e6aль",
     "ebal",
     "eblan",
     "eбaл",
@@ -219,8 +223,6 @@ export const abusivelist = [
     "дрочить",
     "дрочка",
     "дрочун",
-    "е6ал",
-    "е6ут",
     "еб твою мать",
     "ёб твою мать",
     "ёбaн",
@@ -293,8 +295,6 @@ export const abusivelist = [
     "задрачивать",
     "задристать",
     "задрота",
-    "зае6",
-    "заё6",
     "заеб",
     "заёб",
     "заеба",
@@ -486,9 +486,6 @@ export const abusivelist = [
     "переёбок",
     "пернуть",
     "пёрнуть",
-    "пи3д",
-    "пи3де",
-    "пи3ду",
     "пиzдец",
     "пидар",
     "пидарaс",
@@ -644,7 +641,6 @@ export const abusivelist = [
     "сцышь",
     "съебаться",
     "сыкун",
-    "трахае6",
     "трахаеб",
     "трахаёб",
     "трахатель",

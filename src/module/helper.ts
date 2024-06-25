@@ -4,7 +4,8 @@ import { Account, Blank } from "@prisma/client";
 import prisma from "./prisma";
 import { MessagesSendResponse } from "vk-io/lib/api/schemas/responses";
 import { compareTwoStrings } from "string-similarity";
-import { DiceCoefficient } from "natural";
+import { DamerauLevenshteinDistance, DiceCoefficient, JaroWinklerDistance, LevenshteinDistance } from "natural";
+import * as fs from 'fs/promises';
 
 export function Sleep(ms: number) {
     return new Promise((resolve) => {
@@ -272,17 +273,35 @@ export async function Researcher_Better_Blank(query: string, sentences: Blank[])
     return matches.sort((a, b) => b.score - a.score);
 }
 export async function Researcher_Better_Blank_Target(query: string, sentence: Blank): Promise<Match> {
-    /*const jaroWinklerScore = JaroWinklerDistance(query_question, sentence.text, {});
-    //const levenshteinScore = 1 / (levenshteinDistance(query_question, sentence.text) + 1);
-    const cosineScore = compareTwoStrings(query_question, sentence.text);
-    const score = (cosineScore*2 + jaroWinklerScore)/3;*/
-    //const jaroWinklerScore = JaroWinklerDistance(sentence.text, query_question, {});
-    //const levenshteinScore = 1 / (levenshteinDistance(sentence.text, query_question) + 1);
-    //const levenshteinScore2 = 1 / (LevenshteinDistance(sentence.text, query_question) + 1)
-    //const damer = 1 / (DamerauLevenshteinDistance(sentence.text, query_question) + 1);
-    const cosineScore = compareTwoStrings(sentence.text, query);
-    const diceCoefficient = DiceCoefficient(sentence.text, query)
-    const score = (cosineScore*2/* + jaroWinklerScore/2 */+ diceCoefficient*2)/4;
-    //console.log({ question: sentence, score: score, message: query_question, cosineScore, diceCoefficient })
+    //const jaroWinklerScore = JaroWinklerDistance(query, sentence.text, {});
+    const cosineScore = compareTwoStrings(query, sentence.text);
+    const diceCoefficient = DiceCoefficient(query, sentence.text)
+    const cosineScorePro = cosineSimilarity(sentence.text, query)
+    //const score = (cosineScore*2/* + jaroWinklerScore/2 */+ diceCoefficient*2)/4;
+    const score = (cosineScorePro/2 + cosineScore/2 + diceCoefficient)/2
+    //const datsd = { score: score, cosineScore, diceCoefficient, cosineScorePro}
+    //fs.appendFile("file.txt", `Моя анкета: [${query}]\r\n Анкета другого: ${sentence.text}\n${JSON.stringify(datsd)}\n\n`);
     return { id: sentence.id, text: sentence.text, id_account: sentence.id_account, score: score };
+}
+
+function cosineSimilarity(str1: string, str2: string): number {
+    const getWordFrequency = (str: string) => {
+        const words = str.split(' ');
+        const wordCount: { [word: string]: number } = {};
+        words.forEach(word => {
+            wordCount[word] = (wordCount[word] || 0) + 1;
+        });
+        return wordCount;
+    };
+
+    const vector1 = getWordFrequency(str1);
+    const vector2 = getWordFrequency(str2);
+
+    const keys = Array.from(new Set([...Object.keys(vector1), ...Object.keys(vector2)]));
+
+    const dotProduct = keys.reduce((acc, word) => acc + (vector1[word] || 0) * (vector2[word] || 0), 0);
+    const magnitude1 = Math.sqrt(keys.reduce((acc, word) => acc + (vector1[word] || 0) ** 2, 0));
+    const magnitude2 = Math.sqrt(keys.reduce((acc, word) => acc + (vector2[word] || 0) ** 2, 0));
+
+    return dotProduct / (magnitude1 * magnitude2);
 }

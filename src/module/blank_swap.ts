@@ -85,7 +85,7 @@ export async function Blank_Browser(context: any, user_check: Account) {
 				answerTimeLimit
 			}
 		)
-		if (corrected.isTimeout) { await context.send(`⏰ Время ожидания судебной системы истекло!`); return data }
+		if (corrected.isTimeout) { await context.send(`⏰ Время ожидания ввода промпта для браузерного запроса по анкетам истекло!`); return data }
 		if (corrected.text == '!сохранить') {
 			if (text_input.length < 10) { await context.send(`Промпт от 10 символов надо!`); continue }
 			if (text_input.length > 200) { await context.send(`Промпт до 200 символов надо!`); continue }
@@ -106,7 +106,7 @@ export async function Blank_Browser(context: any, user_check: Account) {
 
 export async function Blank_Cleaner(text: string) {
 	try {
-		return text.replace(/[^а-яА-Я0-9ёЁ \-+—–_()/\\"'`«»{}[#№\]=:;.,!?...\n\r]/gi, '')
+		return text.replace(/[^а-яА-Я0-9ёЁ \-+—–_•()/\\"'`«»{}[#№\]=:;.,!?...\n\r]/gi, '')
 	} catch {
 		return ' '
 	}
