@@ -10,21 +10,21 @@ export async function Censored_Activation(censored: string) {
 }
 const d: { [key: string]: string[] } = {
     'а' : ['а', 'a', '@'],
-    'б' : ['б', '6', 'b'],
+    'б' : ['б', 'b'],
     'в' : ['в', 'b', 'v'],
     'г' : ['г', 'r', 'g'],
     'д' : ['д', 'd'],
     'е' : ['е', 'e'],
     'ё' : ['ё', 'e'],
     'ж' : ['ж', 'zh', '*'],
-    'з' : ['з', '3', 'z'],
+    'з' : ['з', 'z'],
     'и' : ['и', 'u', 'i'],
     'й' : ['й', 'u', 'i'],
     'к' : ['к', 'k', 'i{', '|{'],
     'л' : ['л', 'l', 'ji'],
     'м' : ['м', 'm'],
     'н' : ['н', 'h', 'n'],
-    'о' : ['о', 'o', '0'],
+    'о' : ['о', 'o'],
     'п' : ['п', 'n', 'p'],
     'р' : ['р', 'r', 'p'],
     'с' : ['с', 'c', 's'],
@@ -42,16 +42,6 @@ const d: { [key: string]: string[] } = {
     'э' : ['э', 'e'],
     'ю' : ['ю', 'io'],
     'я' : ['я', 'ya'],
-    '0' : ['0'],
-    '1' : ['1'],
-    '2' : ['2'],
-    '3' : ['3'],
-    '4' : ['4'],
-    '5' : ['5'],
-    '6' : ['6'],
-    '7' : ['7'],
-    '8' : ['8'],
-    '9' : ['9']
 }
 function distance(a: string, b: string): number {
     const n: number = a.length;
@@ -92,6 +82,7 @@ export async function Censored_Activation_Pro(text: string) {
         censoredText = censoredText.replace(regex, '*'.repeat(word.length));
     }
     let originalText: string = text.split(' ').map((word, index) => {
+        //console.log(word)
         if (!Number.isNaN(Number(word)) && typeof Number(word) === "number") { return word }
         if (censoredText.indexOf(word.toLowerCase().replace(/ /g, '')) !== -1) {
             return word;
@@ -142,7 +133,6 @@ export const abusivelist = [
     "бздюха",
     "бздюшка",
     "бздюшко",
-    "бля",
     "блябу",
     "блябуду",
     "бляд",
@@ -374,7 +364,6 @@ export const abusivelist = [
     "мудaк",
     "мудаг",
     "мудак",
-    "муде",
     "мудель",
     "мудеть",
     "муди",
@@ -453,7 +442,6 @@ export const abusivelist = [
     "охуяньчик",
     "охуячивать",
     "охуячить",
-    "очкун",
     "падла",
     "падонки",
     "падонок",
@@ -844,7 +832,6 @@ export const abusivelist = [
     "мокрохвостка",
     "мокрощелка",
     "мудак",
-    "муде",
     "мудеть",
     "мудила",
     "мудистый",
@@ -982,7 +969,6 @@ export const abusivelist = [
     "уеть",
     "усраться",
     "усцаться",
-    "фик",
     "фуй",
     "хезать",
     "хер",

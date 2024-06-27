@@ -10,7 +10,7 @@ export async function Data_Registration_Page_Detector(context: any) {
                 const date: any = new Date(date_read)
                 const date_now = Date.now()
                 if (date_now-date < 2592000000) {
-                    await context.send(`⁉ Вашей странице меньше месяца. вы не можете зарегистрироваться в Спутнике`)
+                    await context.send(`⁉ Вашей странице меньше месяца. Вы не можете зарегистрироваться в Спутнике`)
                     return false
                 }
             }
