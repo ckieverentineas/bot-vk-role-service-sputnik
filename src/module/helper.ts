@@ -305,3 +305,11 @@ function cosineSimilarity(str1: string, str2: string): number {
 
     return dotProduct / (magnitude1 * magnitude2);
 }
+
+export async function Online_Set(context: any) {
+    const user = await prisma.account.findFirst({ where: { idvk: context.senderId } })
+    if (user) {
+        const user_online = await prisma.account.update({ where: { id: user.id }, data: { online: new Date() } })
+        //await Logger(`(online) ~ change online from ${user.online} on ${user_online.online} for <user> №${context.senderId}`)
+    }
+}

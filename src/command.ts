@@ -4,7 +4,7 @@ import { Keyboard, KeyboardBuilder } from "vk-io";
 import { IQuestionMessageContext } from "vk-io-question";
 import { answerTimeLimit, chat_id, root, timer_text, vk } from ".";
 import prisma from "./module/prisma";
-import { Accessed, Confirm_User_Success, Logger, Match, Researcher_Better_Blank, Researcher_Better_Blank_Target, Send_Message, User_Info } from "./module/helper";
+import { Accessed, Confirm_User_Success, Logger, Match, Online_Set, Researcher_Better_Blank, Researcher_Better_Blank_Target, Send_Message, User_Info } from "./module/helper";
 import { abusivelist, Censored_Activation, Censored_Activation_Pro } from "./module/blacklist";
 import { Account, Blank, Mail } from "@prisma/client";
 import { Blank_Browser, Blank_Cleaner, Blank_Like, Blank_Report, Blank_Unlike } from "./module/blank_swap";
@@ -15,6 +15,7 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
         if (context.peerType == 'chat') { return }
         const user_check = await prisma.account.findFirst({ where: { idvk: context.senderId } })
         if (!user_check) { return }
+		await Online_Set(context)
 		const user_inf = await User_Info(context)
 		const blank_check = await prisma.blank.findFirst({ where: { id_account: user_check?.id } })
 		const mail_check = await prisma.mail.findFirst({ where: {  blank_to: blank_check?.id ?? 0, read: false, find: true } })
@@ -45,6 +46,7 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
 			await context.send(`Ваша анкета заблокирована из-за жалоб до разбирательств`)
 			return
 		}
+		await Online_Set(context)
 		const mail_build = []
 		for (const mail of await prisma.mail.findMany({ where: { blank_to: blank_check.id, read: false, find: true } })) {
 			mail_build.push(mail)
@@ -116,6 +118,7 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
 			await context.send(`Ваша анкета заблокирована из-за жалоб до разбирательств`)
 			return
 		}
+		await Online_Set(context)
 		let blank_build = []
 		let counter = 0
 		for (const blank of await prisma.$queryRaw<Blank[]>`SELECT * FROM Blank WHERE banned = false ORDER BY random() ASC`) {
@@ -169,6 +172,7 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
 			await context.send(`Ваша анкета заблокирована из-за жалоб до разбирательств`)
 			return
 		}
+		await Online_Set(context)
 		let blank_build = []
 		await context.send(`⌛ Ожидайте, подбираем анкеты...`)
 		for (const blank of await prisma.$queryRaw<Blank[]>`SELECT * FROM Blank WHERE banned = false ORDER BY random() ASC`) {
@@ -221,6 +225,7 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
 			await context.send(`Ваша анкета заблокирована из-за жалоб до разбирательств`)
 			return
 		}
+		await Online_Set(context)
 		const ans = await Blank_Browser(context, user_check)
 		if (!ans.status) { return await context.send(`Вы отменили поиск в браузере`) }
 		let blank_build = []
@@ -270,6 +275,7 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
         if (context.peerType == 'chat') { return }
         const user_check = await prisma.account.findFirst({ where: { idvk: context.senderId } })
         if (!user_check) { return }
+		await Online_Set(context)
 		const blank_check = await prisma.blank.findFirst({ where: { id_account: user_check.id } })
 		if (!blank_check) {
 			let ender = true
@@ -328,6 +334,7 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
         if (context.peerType == 'chat') { return }
         const user_check = await prisma.account.findFirst({ where: { idvk: context.senderId } })
         if (!user_check) { return }
+		await Online_Set(context)
 		const [cmd, value] = context.text.split(' ');
         const target = parseInt(value)
 		const blank_check = await prisma.blank.findFirst({ where: { id_account: user_check.id, id: target } })
@@ -349,6 +356,7 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
         if (context.peerType == 'chat') { return }
         const user_check = await prisma.account.findFirst({ where: { idvk: context.senderId } })
         if (!user_check) { return }
+		await Online_Set(context)
 		const [cmd, value] = context.text.split(' ');
         const target = parseInt(value)
 		const blank_check = await prisma.blank.findFirst({ where: { id_account: user_check.id, id: target } })
@@ -400,6 +408,7 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
         if (context.peerType == 'chat') { return }
         const user_check = await prisma.account.findFirst({ where: { idvk: context.senderId } })
         if (!user_check) { return }
+		await Online_Set(context)
         const censored_change = await prisma.account.update({ where: { id: user_check.id }, data: { censored: user_check.censored ? false : true } })
         if (censored_change) { 
 			await Send_Message(user_check.idvk, `🔧 Цензура ${censored_change.censored ? 'активирована' : 'отключена'}`)
@@ -412,6 +421,7 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
             if (target > 0) {
                 const user: Account | null = await prisma.account.findFirst({ where: { idvk: target } })
                 if (user) {
+					await Online_Set(context)
                     const login = await prisma.account.update({ where: { id: user.id }, data: { id_role: user.id_role == 1 ? 2 : 1 } })
                     await context.send(`@id${login.idvk}(Пользователь) ${login.id_role == 2 ? 'добавлен в лист администраторов' : 'убран из листа администраторов'}`)
 					await Send_Message(login.idvk, `🔧 Вы ${login.id_role == 2 ? 'добавлены в лист администраторов' : 'убраны из листа администраторов'}`)
@@ -428,6 +438,7 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
 		if (context.peerType == 'chat') { return }
         const user_check = await prisma.account.findFirst({ where: { idvk: context.senderId } })
 		if (!user_check) { return }
+		await Online_Set(context)
 		const blank_check = await prisma.blank.findFirst({ where: { id_account: user_check?.id } })
         if (await Accessed(context) == 'user') { return }
 		const blank_build = []
@@ -489,6 +500,7 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
     })
 	hearManager.hear(/енотик/, async (context: any) => {
         if (context.senderId != root) { return }
+		await Online_Set(context)
         await context.sendDocuments({ value: `./prisma/dev.db`, filename: `dev.db` }, { message: '💡 Открывать на сайте: https://sqliteonline.com/' } );
         await vk.api.messages.send({
             peer_id: chat_id,
