@@ -26,8 +26,9 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
 		.textButton({ label: '🎲 Рандом', payload: { command: 'shop_category_enter' }, color: 'positive' }).row()
 		.textButton({ label: '⚙ Цензура', payload: { command: 'shop_category_enter' }, color: 'negative' })
     	.textButton({ label: '🌐 Браузер', payload: { command: 'shop_category_enter' }, color: 'negative' }).row()
+		.textButton({ label: '📐 Пкметр', payload: { command: 'shop_category_enter' }, color: 'positive' })
     	if (await Accessed(context) != `user`) {
-    	    keyboard.textButton({ label: '⚖ Модерация', payload: { command: 'admin_enter' }, color: 'secondary' })
+    	    keyboard.textButton({ label: '⚖ Модерация', payload: { command: 'admin_enter' }, color: 'secondary' }).row()
     	}
     	//keyboard.urlButton({ label: '⚡ Инструкция', url: `https://vk.com/@bank_mm-instrukciya-po-polzovaniu-botom-centrobanka-magomira` }).row()
     	keyboard.textButton({ label: '🚫', payload: { command: 'exit' }, color: 'secondary' }).oneTime().inline()
@@ -273,10 +274,11 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
 		if (!blank_check) {
 			let ender = true
 			let text_input = ``
+			let status_check = ``
 			await Logger(`(private chat) ~ starting creation self blank by <user> №${context.senderId}`)
 			while (ender) {
 				let censored = user_check.censored ? await Censored_Activation_Pro(text_input) : text_input
-				const corrected: any = await context.question(`🧷 У вас еще нет анкеты, введите анкету от 30 до 4000 символов, английские символы запрещены: \n 💡Вы можете указать: пол, возраст, минимальный порог строк, желаемые жанры или же сюжет... другие нюансы.\n📝 Сейчас заполнено: ${censored}`,
+				const corrected: any = await context.question(`🧷 У вас еще нет анкеты, введите анкету от 30 до 4000 символов, английские символы запрещены: \n 💡Вы можете указать: пол, возраст, минимальный порог строк, желаемые жанры или же сюжет... другие нюансы.\n📝 Сейчас заполнено: ${censored}\n\n${status_check}`,
 					{	
 						keyboard: Keyboard.builder()
 						.textButton({ label: '!сохранить', payload: { command: 'student' }, color: 'secondary' })
@@ -297,6 +299,7 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
 						ender = false
 					} else {
 						text_input = await Blank_Cleaner(corrected.text)
+						status_check = `⚠ В анкете зарегистрировано ${text_input?.length} из ${corrected.text?.length} введенных вами символов, убедитесь в корректном отображении анкеты!`
 					}
 				}
 			}
@@ -309,14 +312,14 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
     			.textButton({ label: `✏Изменить ${blank.id}`, payload: { command: 'inventory_enter' }, color: 'secondary' }).row()
     			keyboard.textButton({ label: '🚫', payload: { command: 'exit' }, color: 'secondary' }).oneTime().inline()
 				const count_vision = await prisma.vision.count({ where: { id_blank: blank.id } })
-				const count_account = await prisma.account.count({})
+				const count_max_vision = await prisma.blank.count({})
 				const count_success = await prisma.mail.count({ where: { blank_to: blank.id, read: true, status: true }})
 				const count_ignore = await prisma.mail.count({ where: { blank_to: blank.id, read: true, status: false }})
 				const count_wrong = await prisma.mail.count({ where: { blank_to: blank.id, read: true, find: false }})
 				const count_unread = await prisma.mail.count({ where: { blank_to: blank.id, read: false }})
 				const counter_warn = await prisma.report.count({ where: { id_blank: blank.id } })
 				let censored = user_check.censored ? await Censored_Activation_Pro(blank.text) : blank.text
-				await Send_Message(user_check.idvk, `📜 Анкета: ${blank.id}\n💬 Содержание: ${censored}\n👁 Просмотров: ${count_vision}/${count_account}\n⚠ Предупреждений: ${counter_warn}/3\n✅ Принятых: ${count_success}\n🚫 Игноров: ${count_ignore}\n⌛ Ожидает: ${count_unread}\n❗ Потеряшек: ${count_wrong}`, keyboard)
+				await Send_Message(user_check.idvk, `📜 Анкета: ${blank.id}\n💬 Содержание: ${censored}\n👁 Просмотров: ${count_vision}/${-1+count_max_vision}\n⚠ Предупреждений: ${counter_warn}/3\n✅ Принятых: ${count_success}\n🚫 Игноров: ${count_ignore}\n⌛ Ожидает: ${count_unread}\n❗ Потеряшек: ${count_wrong}`, keyboard)
 			}
 		}
         await Logger(`(private chat) ~ finished self blank is viewed by <user> №${context.senderId}`)
@@ -363,9 +366,10 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
     	if (!confirm.status) { return; }
 		let ender = true
 		let text_input = blank_check.text
+		let status_check = ``
 		while (ender) {
 			let censored = user_check.censored ? await Censored_Activation_Pro(text_input) : text_input
-			const corrected: any = await context.question(`🧷 Вы редактируете анкету ${blank_check.id}, напоминаем анкета должна быть до 4000 символов:\n📝 текущая анкета: ${censored}`,
+			const corrected: any = await context.question(`🧷 Вы редактируете анкету ${blank_check.id}, напоминаем анкета должна быть до 4000 символов:\n📝 текущая анкета: ${censored}\n ${status_check}`,
 				{	
 					keyboard: Keyboard.builder()
 					.textButton({ label: '!сохранить', payload: { command: 'student' }, color: 'secondary' })
@@ -386,6 +390,7 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
 					ender = false
 				} else {
 					text_input = await Blank_Cleaner(corrected.text)
+					status_check = `⚠ В анкете зарегистрировано ${text_input?.length} из ${corrected.text?.length} введенных вами символов, убедитесь в корректном отображении анкеты!`
 				}
 			}
 		}

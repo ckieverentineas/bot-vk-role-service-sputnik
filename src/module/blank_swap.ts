@@ -76,7 +76,7 @@ export async function Blank_Browser(context: any, user_check: Account) {
 	await Logger(`(private chat) ~ starting browser writing prompt by <user> №${context.senderId}`)
 	while (ender2) {
 		let censored = user_check.censored ? await Censored_Activation_Pro(text_input) : text_input
-		const corrected: any = await context.question(`🧷 Введите промпт для поиска анкеты от 10 до 200 символов:\n📝 Текущий запрос: ${censored}`,
+		const corrected: any = await context.question(`🧷 Введите промпт для поиска анкеты от 3 до 3000 символов:\n📝 Текущий запрос: ${censored}`,
 			{	
 				keyboard: Keyboard.builder()
 				.textButton({ label: '!сохранить', payload: { command: 'student' }, color: 'secondary' })
@@ -87,8 +87,8 @@ export async function Blank_Browser(context: any, user_check: Account) {
 		)
 		if (corrected.isTimeout) { await context.send(`⏰ Время ожидания ввода промпта для браузерного запроса по анкетам истекло!`); return data }
 		if (corrected.text == '!сохранить') {
-			if (text_input.length < 10) { await context.send(`Промпт от 10 символов надо!`); continue }
-			if (text_input.length > 200) { await context.send(`Промпт до 200 символов надо!`); continue }
+			if (text_input.length < 3) { await context.send(`Промпт от 3 символов надо!`); continue }
+			if (text_input.length > 3000) { await context.send(`Промпт до 3000 символов надо!`); continue }
 			ender2 = false
 			data.status = true
 			data.text = text_input

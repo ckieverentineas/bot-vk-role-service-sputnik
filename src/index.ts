@@ -8,6 +8,7 @@ import { commandUserRoutes } from './command';
 import prisma from './module/prisma';
 import { User_Registration } from './module/registration';
 import { Data_Registration_Page_Detector } from './module/defender';
+import { Counter_PK_Module } from './module/counter_pk';
 dotenv.config()
 
 //загрузка из .env, задание параметров
@@ -18,7 +19,8 @@ export const group_id: number = Number(Group_Id_Get(token)) //автоматич
 export const timer_text = { answerTimeLimit: 600_000 } // таймер на пять минут для вопросов пользователям
 export const answerTimeLimit = 600_000 // альтернативный таймер на пять минут для вопросов пользователям
 export const starting_date = new Date(); // запись времени работы бота
-
+// хранилище для пкметра
+export const users_pk: Array<{ idvk: number, text: string, mode: boolean }> = []
 //авторизация
 export const vk = new VK({ token: token, pollingGroupId: group_id, apiLimit: 20, apiMode: 'parallel_selected' });
 
@@ -43,6 +45,10 @@ commandUserRoutes(hearManager)
 
 //миддлевар для предварительной обработки сообщений
 vk.updates.on('message_new', async (context: any, next: any) => {
+	//Модуль вызова пкметра
+	const pk_counter_st = await Counter_PK_Module(context)
+	//console.log(users_pk)
+	if (pk_counter_st) { return }
 	//если написали в чат, удаляем по дефолту
 	await Chat_Cleaner(context)
 	const date_page_check = await Data_Registration_Page_Detector(context)
