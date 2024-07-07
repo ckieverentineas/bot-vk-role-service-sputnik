@@ -194,10 +194,7 @@ export async function Keyboard_Index(context: any, messa: any) {
     const keyboard = new KeyboardBuilder()
     if (await Accessed(context) != `user`) {
         keyboard.textButton({ label: '!права', payload: { command: 'sliz' }, color: 'negative' }).row()
-        keyboard.textButton({ label: '!операции', payload: { command: 'sliz' }, color: 'positive' }).row()
-    } 
-    if (await Accessed(context) == `root`) {
-        keyboard.textButton({ label: '!операция', payload: { command: 'sliz' }, color: 'negative' }).row()
+        keyboard.textButton({ label: '!бан', payload: { command: 'sliz' }, color: 'positive' }).row()
     } 
     keyboard.textButton({ label: '!спутник', payload: { command: 'sliz' }, color: 'primary' }).row().oneTime()
     // Отправляем клавиатуру без сообщения
@@ -336,4 +333,23 @@ export async function Blank_Inactivity() {
         }
     }
     Logger(`(system) ~ complete clear blanks inactivity by <system> №0`)
+}
+
+export async function Parser_IDVK(mention: string): Promise<string | false> {
+    const regex = /(?<=id)[0-9]+|(?<=vk.com\/)[a-zA-Z0-9_]+/g;
+    const match = mention.match(regex);
+
+    if (match) {
+        // Если найдено совпадение, возвращаем ID пользователя
+        return match[0];
+    }
+
+    return false; // Если совпадений не найдено
+}
+
+export async function User_Banned(context: any) {
+    const user = await prisma.account.findFirst({ where: { idvk: context.senderId } })
+    if (!user) { return false }
+    if (user.banned) { return true }
+    return false
 }
