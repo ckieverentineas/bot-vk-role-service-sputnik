@@ -52,7 +52,6 @@ async function Up_Time() {
     return `Время работы: ${timeUnits.filter(({ value }) => value > 0).map(({ unit, value }) => `${value} ${unit}`).join(" ")}`
 }
 
-
 export async function Logger(text: String) {
     const project_name = `Sputnik`
     /*const options = {
@@ -312,4 +311,29 @@ export async function Online_Set(context: any) {
         const user_online = await prisma.account.update({ where: { id: user.id }, data: { online: new Date() } })
         //await Logger(`(online) ~ change online from ${user.online} on ${user_online.online} for <user> №${context.senderId}`)
     }
+}
+
+export async function Blank_Inactivity() {
+    const datenow: any = new Date()
+    const timeouter = 2592000000 //месяц
+    const timeouter_warn = 2592000000-86400000 //29 дней
+    Logger(`(system) ~ starting clear blanks inactivity by <system> №0`)
+    for (const blank of await prisma.blank.findMany({})) {
+        const online_check = await prisma.account.findFirst({ where: { id: blank.id_account } })
+        if (!online_check) { continue }
+        const dateold: any = new Date(online_check.online)
+        if (datenow-dateold > timeouter_warn && datenow-dateold < timeouter) {
+            await Sleep(Math.floor(Math.random() * (15000 - 5000 + 1)) + 5000)
+            await Send_Message(online_check.idvk, `⚠ Вы были оффлайн больше 29 дней, ваша анкета №${blank.id} будет снята с поиска завтра!`)
+            continue
+        }
+        if (datenow-dateold > timeouter) {
+            await Sleep(Math.floor(Math.random() * (15000 - 5000 + 1)) + 5000)
+            const blank_del = await prisma.blank.delete({ where: { id: blank.id } })
+            if (!blank_del) { continue }
+            await Send_Message(online_check.idvk, `⛔ Вы были оффлайн больше месяца, ваша анкета №${blank.id} удалена! Вот ее содержание:\n\n${blank.text}\n\n⚠ Если вы все еще ищете сорола, то опубликуйте новую анкету`)
+            await Send_Message(chat_id, `⚠ Анкета №${blank.id} изьята из поиска из-за неактивности клиента`)
+        }
+    }
+    Logger(`(system) ~ complete clear blanks inactivity by <system> №0`)
 }

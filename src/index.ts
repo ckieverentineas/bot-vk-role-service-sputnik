@@ -2,7 +2,7 @@ import { VK } from 'vk-io';
 import { HearManager } from '@vk-io/hear';
 import { QuestionManager, IQuestionMessageContext } from 'vk-io-question';
 import * as dotenv from 'dotenv' // see https://github.com/motdotla/dotenv#how-do-i-use-dotenv-with-import
-import { Chat_Cleaner, Group_Id_Get, Keyboard_Index, Logger, Online_Set, Worker_Checker } from './module/helper';
+import { Blank_Inactivity, Chat_Cleaner, Group_Id_Get, Keyboard_Index, Logger, Online_Set, Worker_Checker } from './module/helper';
 import { InitGameRoutes } from './init';
 import { commandUserRoutes } from './command';
 import prisma from './module/prisma';
@@ -67,4 +67,5 @@ vk.updates.start().then(() => {
 }).catch(console.error);
 //запускаем раз в сутки выдачу времени
 setInterval(Worker_Checker, 86400000);
+setInterval(Blank_Inactivity, 86400000);
 //process.on('warning', e => console.warn(e.stack))

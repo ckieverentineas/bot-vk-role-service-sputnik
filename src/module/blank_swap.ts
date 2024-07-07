@@ -3,7 +3,7 @@ import { Confirm_User_Success, Logger, Send_Message } from "./helper"
 import prisma from "./prisma"
 import { abusivelist, Censored_Activation, Censored_Activation_Pro } from "./blacklist"
 import { Keyboard } from "vk-io"
-import { answerTimeLimit } from ".."
+import { answerTimeLimit, chat_id } from ".."
 
 export async function Blank_Like(context: any, user_check: Account, selector: Blank, blank_build: any, target: number) {
     const blank_skip = await prisma.vision.create({ data: { id_account: user_check.id, id_blank: selector.id } })
@@ -54,6 +54,7 @@ export async function Blank_Report(context: any, user_check: Account, selector: 
 			if (counter_warn >= 3) {
 				await prisma.blank.update({ where: { id: selector.id }, data: { banned: true } })
 				await Send_Message(user_warn.idvk, `🚫 На вашу анкету #${selector.id} донесли крысы ${counter_warn}/3. Изымаем анкету из поиска до разбирательства модераторами.`)
+				await Send_Message(chat_id, `⚠ Анкета №${selector.id} изьята из поиска из-за жалоб, модераторы примите меры`)
 			}
 			const blank_skip = await prisma.vision.create({ data: { id_account: user_check.id, id_blank: selector.id } })
 			blank_build.splice(target, 1)
