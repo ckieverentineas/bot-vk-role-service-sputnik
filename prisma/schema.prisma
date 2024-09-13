@@ -14,6 +14,7 @@ model Account {
   id_role  Int      @default(1)
   censored Boolean  @default(true)
   banned   Boolean  @default(false)
+  donate   Boolean  @default(false)
   crdate   DateTime @default(now())
   online   DateTime @default(now())
   Blank    Blank[]

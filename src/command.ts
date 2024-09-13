@@ -7,7 +7,7 @@ import prisma from "./module/prisma";
 import { Accessed, Confirm_User_Success, Keyboard_Index, Logger, Match, Online_Set, Parser_IDVK, Researcher_Better_Blank, Researcher_Better_Blank_Target, Send_Message, User_Banned, User_Info } from "./module/helper";
 import { abusivelist, Censored_Activation, Censored_Activation_Pro } from "./module/blacklist";
 import { Account, Blank, Mail } from "@prisma/client";
-import { Blank_Browser, Blank_Cleaner, Blank_Like, Blank_Report, Blank_Unlike } from "./module/blank_swap";
+import { Blank_Browser, Blank_Cleaner, Blank_Like, Blank_Like_Donate, Blank_Report, Blank_Unlike } from "./module/blank_swap";
 import { Keyboard_Swap } from "./module/keyboard";
 
 export function commandUserRoutes(hearManager: HearManager<IQuestionMessageContext>): void {
@@ -99,8 +99,8 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
 			if (corrected.text == '👍' || corrected.text == '!лайк') {
 				const mail_skip = await prisma.mail.update({ where: { id: selector.id }, data: { read: true, status: true } })
 				mail_build.splice(target, 1)
-				await Send_Message(account_to.idvk, `🔊 Недавно вам понравилась анкета #${blank_from_check.id}, знайте это взаимно на вашу анкету #${blank_to_check.id}.\n Скорее пишите друг другу в личные сообщения и ловите флешбеки вместе, станьте врагами уже сегодня с https://vk.com/id${account_from.idvk} !`)
-				await Send_Message(account_from.idvk, `🔊 Недавно вам понравилась анкета #${blank_to_check.id}, знайте это взаимно на вашу анкету #${blank_from_check.id}.\n Скорее пишите друг другу в личные сообщения и ловите флешбеки вместе, станьте врагами уже сегодня с https://vk.com/id${account_to.idvk} !`)
+				await Send_Message(account_to.idvk, `🔊 Недавно вам понравилась анкета #${blank_from_check.id}, знайте, что это взаимно на вашу анкету #${blank_to_check.id}.\n Скорее пишите друг другу в личные сообщения и ловите флешбеки вместе, станьте врагами уже сегодня с https://vk.com/id${account_from.idvk} !`)
+				await Send_Message(account_from.idvk, `🔊 Недавно вам понравилась анкета #${blank_to_check.id}, знайте, что это взаимно на вашу анкету #${blank_from_check.id}.\n Скорее пишите друг другу в личные сообщения и ловите флешбеки вместе, станьте врагами уже сегодня с https://vk.com/id${account_to.idvk} !`)
         		await Logger(`(private chat) ~ clicked like for <blank> #${blank_to_check.id} by <user> №${context.senderId}`)
 				const ans_selector = `🌐 Анкеты №${blank_from_check.id} + №${blank_to_check.id} = [ролевики навсегда]!`
     			await Send_Message(chat_id, ans_selector)
@@ -142,15 +142,16 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
 			const blank_check = await prisma.blank.findFirst({ where: { id: selector.id } })
 			if (!blank_check) { 
 				blank_build.splice(target, 1)
-				await Send_Message(user_check.idvk, `⚠ Внимание, следующая анкета была удалена владельцем в процессе просмотра и изьята из поиска:\n\n📜 Анкета: ${selector.id}\n💬 Содержание: ${selector.text}\n `)
+				await Send_Message(user_check.idvk, `⚠ Внимание, следующая анкета была удалена владельцем в процессе просмотра и изъята из поиска:\n\n📜 Анкета: ${selector.id}\n💬 Содержание: ${selector.text}\n `)
 				continue
 			}
 			let censored = user_check.censored ? await Censored_Activation_Pro(selector.text) : selector.text
-			const corrected: any = await context.question(`📜 Анкета: ${selector.id}\n💬 Содержание: ${censored}`, {	keyboard: await Keyboard_Swap(blank_build.length), answerTimeLimit })
+			const corrected: any = await context.question(`📜 Анкета: ${selector.id}\n💬 Содержание: ${censored}`, {	keyboard: await Keyboard_Swap(blank_build.length, user_check), answerTimeLimit })
 			if (corrected.isTimeout) { return await context.send(`⏰ Время ожидания случайного поиска анкеты истекло!`) }
 			const config: any = {
 				'⛔ Налево': Blank_Unlike,
 				'✅ Направо': Blank_Like,
+				'✏ Направо': Blank_Like_Donate,
 				'⚠ Жалоба': Blank_Report,
 			}
 			if (corrected.text in config) {
@@ -198,15 +199,16 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
 			const blank_check = await prisma.blank.findFirst({ where: { id: selector.id } })
 			if (!blank_check) { 
 				blank_build.splice(0, 1)
-				await Send_Message(user_check.idvk, `⚠ Внимание, следующая анкета была удалена владельцем в процессе просмотра и изьята из поиска:\n\n📜 Анкета: ${selector.id}\n💬 Содержание: ${selector.text}\n `)
+				await Send_Message(user_check.idvk, `⚠ Внимание, следующая анкета была удалена владельцем в процессе просмотра и изъята из поиска:\n\n📜 Анкета: ${selector.id}\n💬 Содержание: ${selector.text}\n `)
 				continue
 			}
 			let censored = user_check.censored ? await Censored_Activation_Pro(selector.text) : selector.text
-			const corrected: any = await context.question(`📜 Анкета: ${selector.id}\n🔎 Совпадение: ${(selector.score*100).toFixed(2)}%\n💬 Содержание: ${censored}\n`, {	keyboard: await Keyboard_Swap(blank_build.length), answerTimeLimit })
+			const corrected: any = await context.question(`📜 Анкета: ${selector.id}\n🔎 Совпадение: ${(selector.score*100).toFixed(2)}%\n💬 Содержание: ${censored}\n`, {	keyboard: await Keyboard_Swap(blank_build.length, user_check), answerTimeLimit })
 			if (corrected.isTimeout) { return await context.send(`⏰ Время ожидания поиска анкеты истекло!`) }
 			const config: any = {
 				'⛔ Налево': Blank_Unlike,
 				'✅ Направо': Blank_Like,
+				'✏ Направо': Blank_Like_Donate,
 				'⚠ Жалоба': Blank_Report,
 			}
 			if (corrected.text in config) {
@@ -257,15 +259,16 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
 			const blank_check = await prisma.blank.findFirst({ where: { id: selector.id } })
 			if (!blank_check) { 
 				blank_build.splice(0, 1)
-				await Send_Message(user_check.idvk, `⚠ Внимание, следующая анкета была удалена владельцем в процессе просмотра и изьята из поиска:\n\n📜 Анкета: ${selector.id}\n💬 Содержание: ${selector.text}\n `)
+				await Send_Message(user_check.idvk, `⚠ Внимание, следующая анкета была удалена владельцем в процессе просмотра и изъята из поиска:\n\n📜 Анкета: ${selector.id}\n💬 Содержание: ${selector.text}\n `)
 				continue
 			}
 			let censored = user_check.censored ? await Censored_Activation_Pro(selector.text) : selector.text
-			const corrected: any = await context.question(`📜 Анкета: ${selector.id}\n🔎 Совпадение: ${(selector.score*100).toFixed(2)}%\n💬 Содержание: ${censored}\n`, {	keyboard: await Keyboard_Swap(blank_build.length), answerTimeLimit })
+			const corrected: any = await context.question(`📜 Анкета: ${selector.id}\n🔎 Совпадение: ${(selector.score*100).toFixed(2)}%\n💬 Содержание: ${censored}\n`, {	keyboard: await Keyboard_Swap(blank_build.length, user_check), answerTimeLimit })
 			if (corrected.isTimeout) { return await context.send(`⏰ Время ожидания поиска анкеты истекло!`) }
 			const config: any = {
 				'⛔ Налево': Blank_Unlike,
 				'✅ Направо': Blank_Like,
+				'✏ Направо': Blank_Like_Donate,
 				'⚠ Жалоба': Blank_Report,
 			}
 			if (corrected.text in config) {
@@ -396,7 +399,7 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
 		let status_check = ``
 		while (ender) {
 			let censored = user_check.censored ? await Censored_Activation_Pro(text_input) : text_input
-			const corrected: any = await context.question(`🧷 Вы редактируете анкету ${blank_check.id}, напоминаем анкета должна быть до 4000 символов:\n📝 текущая анкета: ${censored}\n ${status_check}`,
+			const corrected: any = await context.question(`🧷 Вы редактируете анкету ${blank_check.id}, напоминаем, анкета должна быть до 4000 символов:\n📝 текущая анкета: ${censored}\n ${status_check}`,
 				{	
 					keyboard: Keyboard.builder()
 					.textButton({ label: '!сохранить', payload: { command: 'student' }, color: 'secondary' })
@@ -548,6 +551,25 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
             } else {
                 await context.send(`@id${target}(Пользователя) не существует`)
 				await Logger(`(private chat) ~ not found <user> #${target} for ban by <admin> №${context.senderId}`)
+            }
+            
+        }
+    })
+	hearManager.hear(/!донатер/, async (context) => {
+        if (context.isOutbox == false && (context.senderId == root || await Accessed(context) != 'user') && context.text) {
+			const target = await Parser_IDVK(context.text)
+			if (!target) { return }
+            const user: Account | null = await prisma.account.findFirst({ where: { idvk: Number(target) } })
+            if (user) {
+				await Online_Set(context)
+                const login = await prisma.account.update({ where: { id: user.id }, data: { donate: user.donate ? false : true } })
+                await context.send(`@id${login.idvk}(Пользователь) ${login.donate ? 'добавлен в лист донатеров' : 'убран из листа донатеров'}`)
+				await Send_Message(login.idvk, `🔧 Вы ${login.donate ? 'добавлены в лист донатеров' : 'убраны из листа донатеров'}`)
+				await Send_Message(chat_id, `@id${login.idvk}(Пользователь) ${login.donate ? 'добавлен в лист донатеров' : 'убран из листа донатеров'}`)
+				await Logger(`(private chat) ~ donate status changed <${login.donate ? 'true' : 'false'}> for #${login.idvk} by <admin> №${context.senderId}`)
+            } else {
+                await context.send(`@id${target}(Пользователя) не существует`)
+				await Logger(`(private chat) ~ not found <user> #${target} for donate status by <admin> №${context.senderId}`)
             }
             
         }

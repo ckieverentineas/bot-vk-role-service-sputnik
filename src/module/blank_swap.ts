@@ -14,7 +14,47 @@ export async function Blank_Like(context: any, user_check: Account, selector: Bl
 	const mail_set = await prisma.mail.create({ data: { blank_to: selector.id, blank_from: user_blank?.id ?? 0 }})
 	if (mail_set) { await Send_Message(user_nice?.idvk ?? user_check.idvk, `🔔 Ваша анкета #${selector.id} понравилась кому-то, загляните в почту.`) }
 	await Logger(`(private chat) ~ clicked swipe for <blank> #${selector.id} by <user> №${context.senderId}`)
-    
+}
+export async function Blank_Like_Donate(context: any, user_check: Account, selector: Blank, blank_build: any, target: number) {
+    const blank_skip = await prisma.vision.create({ data: { id_account: user_check.id, id_blank: selector.id } })
+	blank_build.splice(target, 1)
+	let ender2 = true
+	let text_input = ''
+	while (ender2) {
+		let censored = user_check.censored ? await Censored_Activation_Pro(text_input) : text_input
+		const corrected: any = await context.question(`🧷 Введите приватное сообщение пользователю:\n📝 Набранное: ${censored}`,
+			{	
+				keyboard: Keyboard.builder()
+				.textButton({ label: '!сохранить', payload: { command: 'student' }, color: 'secondary' })
+				.textButton({ label: '!отмена', payload: { command: 'citizen' }, color: 'secondary' })
+				.oneTime().inline(),
+				answerTimeLimit
+			}
+		)
+		if (corrected.isTimeout) { return await context.send(`⏰ Время ожидания ввода приватного сообщения истекло!`) }
+		if (corrected.text == '!сохранить') {
+			if (text_input.length < 1) { await context.send(`Сообщение от 1 символа надо!`); continue }
+			if (text_input.length > 3000) { await context.send(`Сообщение до 3000 символов надо!`); continue }
+			await Send_Message(user_check.idvk, `✅ Анкета #${selector.id} вам зашла, отправляем информацию об этом его/её владельцу вместе с приложением: ${text_input}`)
+			const user_nice = await prisma.account.findFirst({ where: { id: selector.id_account } })
+			const user_blank = await prisma.blank.findFirst({ where: { id_account: user_check.id } })
+			const mail_set = await prisma.mail.create({ data: { blank_to: selector.id, blank_from: user_blank?.id ?? 0 }})
+			if (mail_set) { 
+				await Send_Message(user_nice?.idvk ?? user_check.idvk, `🔔 Ваша анкета #${selector.id} понравилась владельцу анкеты #${user_blank?.id}, загляните в почту.`) 
+				await Send_Message(user_nice?.idvk ?? user_check.idvk, `✉️ Получено приватное письмо от владельца анкеты #${user_blank?.id}: ${text_input}\n⚠ Загляните в почту и найдите анкету #${user_blank?.id} чтобы отреагировать.`)
+				await Send_Message(chat_id,`⚖️ #${user_blank?.id} --> ${text_input} --> #${selector.id}`)
+			}
+			await Logger(`(private chat) ~ clicked swipe with private message for <blank> #${selector.id} by <user> №${context.senderId}`)
+			ender2 = false
+		} else {
+			if (corrected.text == '!отмена') {
+				await context.send(`Вы отменили написание приватного письма на анкету`)
+				ender2 = false
+			} else {
+				text_input = await Blank_Cleaner(corrected.text)
+			}
+		}
+	}
 }
 export async function Blank_Unlike(context: any, user_check: Account, selector: Blank, blank_build: any, target: number) {
     const blank_skip = await prisma.vision.create({ data: { id_account: user_check.id, id_blank: selector.id } })
