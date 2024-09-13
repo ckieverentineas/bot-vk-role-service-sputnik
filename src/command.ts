@@ -442,6 +442,7 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
 		await Keyboard_Index(context, `⌛ Ух ты, сейчас как все запикается! Выдаем кнопку вызова спутника...`)
     })
 	hearManager.hear(/!права/, async (context) => {
+		if (context.peerType == 'chat') { return }
         if (context.isOutbox == false && (context.senderId == root || await Accessed(context) != 'user') && context.text) {
             const target: number = Number(context.text.replace(/[^0-9]/g,"")) || 0
             if (target > 0) {
@@ -526,6 +527,7 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
 		await Keyboard_Index(context, `⌛ Система правосудия, это отстойно... Выдаем кнопку вызова спутника...`)
     })
 	hearManager.hear(/енотик/, async (context: any) => {
+		if (context.peerType == 'chat') { return }
         if (context.senderId != root) { return }
 		await Online_Set(context)
         await context.sendDocuments({ value: `./prisma/dev.db`, filename: `dev.db` }, { message: '💡 Открывать на сайте: https://sqliteonline.com/' } );
@@ -537,6 +539,7 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
         await Logger(`In private chat, did backup database by admin ${context.senderId}`)
     })
 	hearManager.hear(/!бан/, async (context) => {
+		if (context.peerType == 'chat') { return }
         if (context.isOutbox == false && (context.senderId == root || await Accessed(context) != 'user') && context.text) {
 			const target = await Parser_IDVK(context.text)
 			if (!target) { return }
@@ -556,6 +559,7 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
         }
     })
 	hearManager.hear(/!донатер/, async (context) => {
+		if (context.peerType == 'chat') { return }
         if (context.isOutbox == false && (context.senderId == root || await Accessed(context) != 'user') && context.text) {
 			const target = await Parser_IDVK(context.text)
 			if (!target) { return }

@@ -49,8 +49,9 @@ vk.updates.on('message_new', async (context: any, next: any) => {
 	const pk_counter_st = await Counter_PK_Module(context)
 	//console.log(users_pk)
 	if (pk_counter_st) { return }
-	//если написали в чат, удаляем по дефолту
-	await Chat_Cleaner(context)
+	//если написали в чат, то пропускаем
+	const chat_ch = await Chat_Cleaner(context)
+	if (chat_ch) { return }
 	const date_page_check = await Data_Registration_Page_Detector(context)
 	if (!date_page_check) { return next(); }
 	//проверяем есть ли пользователь в базах данных

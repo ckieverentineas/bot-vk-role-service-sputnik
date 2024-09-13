@@ -41,7 +41,7 @@ export async function Blank_Like_Donate(context: any, user_check: Account, selec
 			const mail_set = await prisma.mail.create({ data: { blank_to: selector.id, blank_from: user_blank?.id ?? 0 }})
 			if (mail_set) { 
 				await Send_Message(user_nice?.idvk ?? user_check.idvk, `🔔 Ваша анкета #${selector.id} понравилась владельцу анкеты #${user_blank?.id}, загляните в почту.`) 
-				await Send_Message(user_nice?.idvk ?? user_check.idvk, `✉️ Получено приватное письмо от владельца анкеты #${user_blank?.id}: ${text_input}\n⚠ Загляните в почту и найдите анкету #${user_blank?.id} чтобы отреагировать.`)
+				await Send_Message(user_nice?.idvk ?? user_check.idvk, `✉️ Получено приватное письмо от владельца анкеты #${user_blank?.id}: ${text_input}\n⚠ Чтобы отреагировать, загляните в почту и найдите анкету #${user_blank?.id}.`)
 				await Send_Message(chat_id,`⚖️ #${user_blank?.id} --> ${text_input} --> #${selector.id}`)
 			}
 			await Logger(`(private chat) ~ clicked swipe with private message for <blank> #${selector.id} by <user> №${context.senderId}`)

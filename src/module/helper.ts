@@ -234,14 +234,15 @@ export async function User_Info(context: any) {
 
 export async function Chat_Cleaner(context: any) {
     if (context.peerType == 'chat') { 
-		try { 
+		/*try { 
 			await vk.api.messages.delete({'peer_id': context.peerId, 'delete_for_all': 1, 'cmids': context.conversationMessageId, 'group_id': group_id})
 			await Logger(`(public chat) ~ received a message from the <user> #${context.senderId} and was deleted by <system> №0`)
 		} catch (error) { 
 			await Logger(`(public chat) ~ received a message from the <user> #${context.senderId} and wasn't deleted by <system> №0`)
-		}  
-		return
+		}  */
+		return true
 	}
+    return false
 }
 export interface Match {
     id: number,
