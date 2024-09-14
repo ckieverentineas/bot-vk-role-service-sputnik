@@ -92,7 +92,7 @@ export async function Edit_Message(context: any, message: string, keyboard?: Key
             await vk.api.messages.edit({peer_id: context.peerId, conversation_message_id: context.conversationMessageId, message: `${message}`})
         }
     } catch (e) {
-        const err = `Ошибка редактирования сообщения, попробуйте через 1-15 минут, в зависимости от ошибки: ${e}`
+        const err = `⚠ Ошибка редактирования сообщения, попробуйте через 1-15 минут, в зависимости от ошибки: ${e}`
         console.log(`Ошибка редактирования сообщения, попробуйте через 1-15 минут, в зависимости от ошибки: ${e}`)
         try {
             await vk.api.messages.send({
@@ -195,6 +195,7 @@ export async function Keyboard_Index(context: any, messa: any) {
     if (await Accessed(context) != `user`) {
         keyboard.textButton({ label: '!права', payload: { command: 'sliz' }, color: 'negative' }).row()
         keyboard.textButton({ label: '!бан', payload: { command: 'sliz' }, color: 'positive' }).row()
+        keyboard.textButton({ label: '!донатер', payload: { command: 'sliz' }, color: 'positive' }).row()
     } 
     keyboard.textButton({ label: '!спутник', payload: { command: 'sliz' }, color: 'primary' }).row().oneTime()
     // Отправляем клавиатуру без сообщения

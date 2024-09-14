@@ -33,8 +33,8 @@ export async function Blank_Like_Donate(context: any, user_check: Account, selec
 		)
 		if (corrected.isTimeout) { return await context.send(`⏰ Время ожидания ввода приватного сообщения истекло!`) }
 		if (corrected.text == '!сохранить') {
-			if (text_input.length < 1) { await context.send(`Сообщение от 1 символа надо!`); continue }
-			if (text_input.length > 3000) { await context.send(`Сообщение до 3000 символов надо!`); continue }
+			if (text_input.length < 1) { await context.send(`⚠ Сообщение от 1 символа надо!`); continue }
+			if (text_input.length > 3000) { await context.send(`⚠ Сообщение до 3000 символов надо!`); continue }
 			await Send_Message(user_check.idvk, `✅ Анкета #${selector.id} вам зашла, отправляем информацию об этом его/её владельцу вместе с приложением: ${text_input}`)
 			const user_nice = await prisma.account.findFirst({ where: { id: selector.id_account } })
 			const user_blank = await prisma.blank.findFirst({ where: { id_account: user_check.id } })
@@ -48,7 +48,7 @@ export async function Blank_Like_Donate(context: any, user_check: Account, selec
 			ender2 = false
 		} else {
 			if (corrected.text == '!отмена') {
-				await context.send(`Вы отменили написание приватного письма на анкету`)
+				await context.send(`🔧 Вы отменили написание приватного письма на анкету`)
 				ender2 = false
 			} else {
 				text_input = await Blank_Cleaner(corrected.text)
@@ -82,15 +82,15 @@ export async function Blank_Report(context: any, user_check: Account, selector: 
 		)
 		if (corrected.isTimeout) { return await context.send(`⏰ Время ожидания ввода жалобы истекло!`) }
 		if (corrected.text == '!сохранить') {
-			if (text_input.length < 10) { await context.send(`Жалобу от 10 символов надо!`); continue }
-			if (text_input.length > 200) { await context.send(`Жалобу до 200 символов надо!`); continue }
+			if (text_input.length < 10) { await context.send(`⚠ Жалобу от 10 символов надо!`); continue }
+			if (text_input.length > 200) { await context.send(`⚠ Жалобу до 200 символов надо!`); continue }
 			const report_set = await prisma.report.create({ data: { id_blank: selector.id, id_account: user_check.id, text: text_input }})
 			await Logger(`(private chat) ~ report send about <blank> #${selector.id} by <user> №${context.senderId}`)
 			await Send_Message(user_check.idvk, `✅ Мы зарегистрировали вашу жалобу на анкету #${selector.id}, спасибо за донос!`)
 			const user_warn = await prisma.account.findFirst({ where: { id: selector.id_account } })
 			const counter_warn = await prisma.report.count({ where: { id_blank: selector.id, status: 'wait' } })
 			if (!user_warn) { return }
-			await Send_Message(user_warn.idvk, `✅ На вашу анкету #${selector.id} донесли крысы следующее: [${report_set.text}]! Жалоб ${counter_warn}/3.`)
+			await Send_Message(user_warn.idvk, `✅ На вашу анкету #${selector.id} кто-то донес до модератора следующее: [${report_set.text}]!\n⚠ Жалоб: ${counter_warn}/3.\n💡 Не беспокойтесь, если это ложное обвинение, то после третьей жалобы модератор разблокирует вас.`)
 			if (counter_warn >= 3) {
 				await prisma.blank.update({ where: { id: selector.id }, data: { banned: true } })
 				await Send_Message(user_warn.idvk, `🚫 На вашу анкету #${selector.id} донесли крысы ${counter_warn}/3. Изымаем анкету из поиска до разбирательства модераторами.`)
@@ -101,7 +101,7 @@ export async function Blank_Report(context: any, user_check: Account, selector: 
 			ender2 = false
 		} else {
 			if (corrected.text == '!отмена') {
-				await context.send(`Вы отменили написание жалобы на анкету`)
+				await context.send(`🔧 Вы отменили написание жалобы на анкету`)
 				ender2 = false
 			} else {
 				text_input = await Blank_Cleaner(corrected.text)
@@ -128,14 +128,14 @@ export async function Blank_Browser(context: any, user_check: Account) {
 		)
 		if (corrected.isTimeout) { await context.send(`⏰ Время ожидания ввода промпта для браузерного запроса по анкетам истекло!`); return data }
 		if (corrected.text == '!сохранить') {
-			if (text_input.length < 3) { await context.send(`Промпт от 3 символов надо!`); continue }
-			if (text_input.length > 3000) { await context.send(`Промпт до 3000 символов надо!`); continue }
+			if (text_input.length < 3) { await context.send(`⚠ Промпт от 3 символов надо!`); continue }
+			if (text_input.length > 3000) { await context.send(`⚠ Промпт до 3000 символов надо!`); continue }
 			ender2 = false
 			data.status = true
 			data.text = text_input
 		} else {
 			if (corrected.text == '!отмена') {
-				await context.send(`Вы отменили ввод промпта для браузера по анкетам`)
+				await context.send(`🔧 Вы отменили ввод промпта для браузера по анкетам`)
 				ender2 = false
 			} else {
 				text_input = await Blank_Cleaner(corrected.text)
