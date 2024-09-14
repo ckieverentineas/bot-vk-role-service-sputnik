@@ -2,7 +2,7 @@ import { VK } from 'vk-io';
 import { HearManager } from '@vk-io/hear';
 import { QuestionManager, IQuestionMessageContext } from 'vk-io-question';
 import * as dotenv from 'dotenv' // see https://github.com/motdotla/dotenv#how-do-i-use-dotenv-with-import
-import { Blank_Inactivity, Chat_Cleaner, Group_Id_Get, Keyboard_Index, Logger, Online_Set, Worker_Checker } from './module/helper';
+import { Blank_Inactivity, Chat_Cleaner, Exiter, Group_Id_Get, Keyboard_Index, Logger, Online_Set, Worker_Checker } from './module/helper';
 import { InitGameRoutes } from './init';
 import { commandUserRoutes } from './command';
 import prisma from './module/prisma';
@@ -61,6 +61,18 @@ vk.updates.on('message_new', async (context: any, next: any) => {
 	await Online_Set(context)
 	await Keyboard_Index(context, `⌛ Загрузка, пожалуйста подождите...`)
 	return next();
+})
+
+vk.updates.on('message_event', async (context: any, next: any) => { 
+	const config: any = {
+		"exit": Exiter,
+	}
+	try {
+		await config[context.eventPayload.command](context)
+	} catch (e) {
+		await Logger(`Error event detected for callback buttons: ${e}`)
+	}
+	return await next();
 })
 //запускаем бота
 vk.updates.start().then(() => {

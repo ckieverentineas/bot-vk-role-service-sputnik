@@ -9,6 +9,7 @@ import { abusivelist, Censored_Activation, Censored_Activation_Pro } from "./mod
 import { Account, Blank, Mail } from "@prisma/client";
 import { Blank_Browser, Blank_Cleaner, Blank_Like, Blank_Like_Donate, Blank_Report, Blank_Unlike } from "./module/blank_swap";
 import { Keyboard_Swap } from "./module/keyboard";
+import { BlackList_Printer } from "./module/blacklist_user";
 
 export function commandUserRoutes(hearManager: HearManager<IQuestionMessageContext>): void {
 	hearManager.hear(/!спутник|!Спутник/, async (context: any) => {
@@ -31,8 +32,9 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
     	if (await Accessed(context) != `user`) {
     	    keyboard.textButton({ label: '⚖ Модерация', payload: { command: 'admin_enter' }, color: 'secondary' }).row()
     	}
+		keyboard.textButton({ label: '☠ Банхаммер', payload: { command: 'admin_enter' }, color: 'primary' }).row()
     	//keyboard.urlButton({ label: '⚡ Инструкция', url: `https://vk.com/@bank_mm-instrukciya-po-polzovaniu-botom-centrobanka-magomira` }).row()
-    	keyboard.textButton({ label: '🚫', payload: { command: 'exit' }, color: 'secondary' }).oneTime().inline()
+    	keyboard.callbackButton({ label: '🚫', payload: { command: 'exit' }, color: 'secondary' }).oneTime().inline()
 		await Send_Message(user_check.idvk, `🛰 Вы в системе поиска соролевиков, ${user_inf.first_name}, что изволите?`, keyboard)
         await Logger(`(private chat) ~ enter in main menu system is viewed by <user> №${context.senderId}`)
     })
@@ -444,7 +446,7 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
 	hearManager.hear(/!права/, async (context) => {
 		if (context.peerType == 'chat') { return }
         if (context.isOutbox == false && (context.senderId == root || await Accessed(context) != 'user') && context.text) {
-            const target: number = Number(context.text.replace(/[^0-9]/g,"")) || 0
+            const target: number = Number(await Parser_IDVK(context.text)) || 0
             if (target > 0) {
                 const user: Account | null = await prisma.account.findFirst({ where: { idvk: target } })
                 if (user) {
@@ -577,5 +579,9 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
             }
             
         }
+    })
+	hearManager.hear(/☠ Банхаммер|!чс/, async (context) => {
+		if (context.peerType == 'chat') { return }
+        await BlackList_Printer(context)
     })
 }

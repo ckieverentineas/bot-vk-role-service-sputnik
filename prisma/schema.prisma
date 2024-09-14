@@ -20,6 +20,13 @@ model Account {
   Blank    Blank[]
   Vision   Vision[]
   Report   Report[]
+  BlackList BlackList[]
+}
+model BlackList {
+  id       Int      @id @default(autoincrement())
+  idvk     Int
+  id_account Int
+  account    Account  @relation(fields: [id_account], references: [id], onDelete: Cascade)
 }
 
 model Blank {

@@ -336,13 +336,35 @@ export async function Blank_Inactivity() {
     Logger(`(system) ~ complete clear blanks inactivity by <system> №0`)
 }
 
-export async function Parser_IDVK(mention: string): Promise<string | false> {
+/*export async function Parser_IDVK(mention: string): Promise<string | false> {
     const regex = /(?<=id)[0-9]+|(?<=vk.com\/)[a-zA-Z0-9_]+/g;
     const match = mention.match(regex);
 
     if (match) {
         // Если найдено совпадение, возвращаем ID пользователя
         return match[0];
+    }
+
+    return false; // Если совпадений не найдено
+}*/
+export async function Parser_IDVK(mention: string): Promise<string | false> {
+    const regex = /(?<=id)[0-9]+|(?<=vk\.com\/)([a-zA-Z0-9_.]+)/g; // Добавлен '.' в регулярное выражение
+    const match = mention.match(regex);
+
+    if (match) {
+        const identifier = match[0];
+
+        // Проверяем, является ли идентификатор числом (ID) или текстом (имя пользователя)
+        if (!isNaN(Number(identifier))) {
+            return identifier; // Если это ID, просто возвращаем его
+        } else {
+            try {
+                const user = await vk.api.users.get({ user_id: identifier });
+                return user.length > 0 ? user[0].id.toString() : false; // Возвращаем ID пользователя
+            } catch {
+                return false; // Если пользователь не найден, возвращаем false
+            }
+        }
     }
 
     return false; // Если совпадений не найдено
@@ -353,4 +375,18 @@ export async function User_Banned(context: any) {
     if (!user) { return false }
     if (user.banned) { return true }
     return false
+}
+
+export async function Exiter(context: any) {
+    const text = `🧹 Здесь было сообщение от Спутника.`
+    await Edit_Message(context, text)
+    await vk.api.messages.sendMessageEventAnswer({
+        event_id: context.eventId,
+        user_id: context.userId,
+        peer_id: context.peerId,
+        event_data: JSON.stringify({
+            type: "show_snackbar",
+            text: "🔔 Выход из системы успешно завершен!"
+        })
+    })
 }
