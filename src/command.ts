@@ -584,6 +584,11 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
 				await Send_Message(login.idvk, `🔧 Вы ${login.banned ? 'добавлены в лист забаненных' : 'убраны из листа забаненных'}`)
 				await Send_Message(chat_id, `🔧 @id${login.idvk}(Пользователь) ${login.banned ? 'добавлен в лист забаненных' : 'убран из листа забаненных'}`)
 				await Logger(`(private chat) ~ banned status changed <${login.banned ? 'true' : 'false'}> for #${login.idvk} by <admin> №${context.senderId}`)
+				const blank_block = await prisma.blank.findFirst({ where: { id_account: login.id } })
+				if (!blank_block) { return await Keyboard_Index(context, `⌛  У ламината не было анкеты!`)}
+				const blank_del = await prisma.blank.delete({ where: { id: blank_block.id } })
+				if (!blank_del) { return }
+				await Send_Message(login.idvk, `🔧 Анкета ${blank_del.id} была удалена:\n ${blank_del.text}`)
             } else {
                 await context.send(`⚠ @id${target}(Пользователя) не существует`)
 				await Logger(`(private chat) ~ not found <user> #${target} for ban by <admin> №${context.senderId}`)
