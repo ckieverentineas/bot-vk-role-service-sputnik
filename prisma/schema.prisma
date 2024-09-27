@@ -32,6 +32,7 @@ model BlackList {
 model Blank {
   id         Int      @id @default(autoincrement())
   text       String
+  photo      String   @default("")
   id_account Int
   account    Account  @relation(fields: [id_account], references: [id], onDelete: Cascade)
   banned     Boolean  @default(false)

@@ -1,4 +1,4 @@
-import { Keyboard, KeyboardBuilder, PhotoAttachment, VK } from "vk-io";
+import { Attachment, Keyboard, KeyboardBuilder, PhotoAttachment, VK } from "vk-io";
 import { answerTimeLimit, chat_id, group_id, root, starting_date, vk } from "..";
 import { Account, Blank } from "@prisma/client";
 import prisma from "./prisma";
@@ -68,10 +68,13 @@ export async function Logger(text: String) {
     console.log(`[${project_name}] --> ${text} <-- (${new Date().toLocaleString("ru"/*, options*/)})`)
 }
 
-export async function Send_Message(idvk: number, message: string, keyboard?: Keyboard) {
+export async function Send_Message(idvk: number, message: string, keyboard?: Keyboard, attachment?: string) {
     message = message ? message : 'invalid message'
     try {
-        keyboard ? await vk.api.messages.send({ peer_id: idvk, random_id: 0, message: `${message}`, keyboard: keyboard } ) : await vk.api.messages.send({ peer_id: idvk, random_id: 0, message: `${message}` } )
+        if (!attachment && !keyboard) { await vk.api.messages.send({ peer_id: idvk, random_id: 0, message: `${message}` } ) }
+        if (attachment && !keyboard) { await vk.api.messages.send({ peer_id: idvk, random_id: 0, message: `${message}`, attachment: attachment } ) }
+        if (!attachment && keyboard) { await vk.api.messages.send({ peer_id: idvk, random_id: 0, message: `${message}`, keyboard: keyboard } ) }
+        if (attachment && keyboard) { await vk.api.messages.send({ peer_id: idvk, random_id: 0, message: `${message}`, keyboard: keyboard, attachment: attachment } ) }
     } catch (e) {
         console.log(`Ошибка отправки сообщения: ${e}`)
     }
@@ -194,10 +197,10 @@ export async function Keyboard_Index(context: any, messa: any) {
     const keyboard = new KeyboardBuilder()
     if (await Accessed(context) != `user`) {
         keyboard.textButton({ label: '!права', payload: { command: 'sliz' }, color: 'negative' }).row()
-        keyboard.textButton({ label: '!бан', payload: { command: 'sliz' }, color: 'positive' }).row()
-        keyboard.textButton({ label: '!донатер', payload: { command: 'sliz' }, color: 'positive' }).row()
+        keyboard.textButton({ label: '!бан', payload: { command: 'sliz' }, color: 'negative' }).row()
+        keyboard.textButton({ label: '!донатер', payload: { command: 'sliz' }, color: 'negative' }).row()
     } 
-    keyboard.textButton({ label: '!спутник', payload: { command: 'sliz' }, color: 'primary' }).row().oneTime()
+    keyboard.textButton({ label: '!спутник', payload: { command: 'sliz' }, color: 'positive' }).row().oneTime()
     // Отправляем клавиатуру без сообщения
     await vk.api.messages.send({ peer_id: context.senderId, random_id: 0, message: `${messa}\u00A0`, keyboard: keyboard })
     .then(async (response: MessagesSendResponse) => { 
@@ -390,4 +393,51 @@ export async function Exiter(context: any) {
             text: "🔔 Выход из системы успешно завершен!"
         })
     })
+}
+
+export async function Photo_Uploads(context: any) {
+    // Получаем информацию о вложенной фотографии
+    const attachment = context.message.attachments[0];
+    const photoId = attachment.photo.id;
+    const ownerId = attachment.photo.owner_id;
+    // Формат для вложения
+    const attachmentStr = `photo${ownerId}_${photoId}`;
+    const photoUrl = attachment.photo.sizes[attachment.photo.sizes.length - 1].url
+    // Сохраняем фото для пользователя
+    const userId = context.senderId;
+    console.log(attachmentStr)
+    await context.send('Фото сохранено!');
+    try {
+        await context.send({ attachment: attachmentStr });
+        return attachmentStr
+    } catch (e) {
+        await context.send(`Произошла ошибка: ${e}`);
+    }
+    
+    //await vk.api.messages.send({ peer_id: 463031671, random_id: 0, message: `тест`, attachment: attachmentStr } )
+    return ''
+}
+
+export async function Photo_Upload(context: any) {
+    // Получаем информацию о вложенной фотографии
+    const attachment = context.attachments[0];
+    //console.log(context.attachments[0])
+    const photoId = attachment.id;
+    const ownerId = attachment.ownerId;
+    // Формат для вложения
+    const attachmentStr = `photo${ownerId}_${photoId}_${attachment.accessKey}`;
+    //const photoUrl = attachment.photo.sizes[attachment.photo.sizes.length - 1].url
+    // Сохраняем фото для пользователя
+    //const userId = context.senderId;
+    //console.log(attachmentStr)
+    //await context.send('Фото сохранено!');
+    try {
+        //console.log({ attachment: attachmentStr });
+        return attachmentStr
+    } catch (e) {
+        await Logger(`Произошла ошибка: ${e}`);
+    }
+    
+    //await vk.api.messages.send({ peer_id: 463031671, random_id: 0, message: `тест`, attachment: attachmentStr } )
+    return ''
 }

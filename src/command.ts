@@ -4,7 +4,7 @@ import { Keyboard, KeyboardBuilder } from "vk-io";
 import { IQuestionMessageContext } from "vk-io-question";
 import { answerTimeLimit, chat_id, root, timer_text, vk } from ".";
 import prisma from "./module/prisma";
-import { Accessed, Confirm_User_Success, Keyboard_Index, Logger, Match, Online_Set, Parser_IDVK, Researcher_Better_Blank, Researcher_Better_Blank_Target, Send_Message, User_Banned, User_Info } from "./module/helper";
+import { Accessed, Confirm_User_Success, Keyboard_Index, Logger, Match, Online_Set, Parser_IDVK, Photo_Upload, Researcher_Better_Blank, Researcher_Better_Blank_Target, Send_Message, User_Banned, User_Info } from "./module/helper";
 import { abusivelist, Censored_Activation, Censored_Activation_Pro } from "./module/blacklist";
 import { Account, Blank, Mail } from "@prisma/client";
 import { Blank_Browser, Blank_Cleaner, Blank_Like, Blank_Like_Donate, Blank_Report, Blank_Unlike } from "./module/blank_swap";
@@ -77,16 +77,14 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
 				continue
 			}
 			let censored = user_check.censored ? await Censored_Activation_Pro(blank_from_check.text) : blank_from_check.text
-			const corrected: any = await context.question(`🔔 Ваша анкета #${blank_to_check.id} понравилась автору следующей анкеты:\n 📜 Анкета: ${blank_from_check.id}\n💬 Содержание: ${censored}`,
-				{	
-					keyboard: Keyboard.builder()
-					.textButton({ label: '👎', payload: { command: 'student' }, color: 'secondary' })
-					.textButton({ label: '👍', payload: { command: 'citizen' }, color: 'secondary' }).row()
-					.textButton({ label: '🚫Назад', payload: { command: 'citizen' }, color: 'secondary' })
-					.oneTime().inline(),
-					answerTimeLimit
-				}
-			)
+			//выдача анкеты с фото
+			const text = `🔔 Ваша анкета #${blank_to_check.id} понравилась автору следующей анкеты:\n 📜 Анкета: ${blank_from_check.id}\n💬 Содержание:\n${censored}`
+			const keyboard = new KeyboardBuilder()
+			.textButton({ label: '👎', payload: { command: 'student' }, color: 'secondary' })
+			.textButton({ label: '👍', payload: { command: 'citizen' }, color: 'secondary' }).row()
+			.textButton({ label: '🚫Назад', payload: { command: 'citizen' }, color: 'secondary' })
+			.oneTime().inline()
+			const corrected: any = blank_from_check.photo.includes('photo') ? await context.question( text, {keyboard, answerTimeLimit, attachment: blank_from_check.photo}) : await context.question( text, {keyboard, answerTimeLimit})
 			if (corrected.isTimeout) { await context.send(`⏰ Время ожидания разбора почты истекло!`); await Keyboard_Index(context, `⌛ Обновление клавиатуры...`); return }
 			if (corrected.text == '🚫Назад' || corrected.text == '!назад') {
 				await Send_Message(user_check.idvk, `✅ Успешная отмена просмотра почтового ящика анкет.`)
@@ -155,7 +153,10 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
 				continue
 			}
 			let censored = user_check.censored ? await Censored_Activation_Pro(selector.text) : selector.text
-			const corrected: any = await context.question(`📜 Анкета: ${selector.id}\n💬 Содержание: ${censored}`, {	keyboard: await Keyboard_Swap(blank_build.length, user_check), answerTimeLimit })
+			//выдача анкеты с фото
+			const text = `📜 Анкета: ${selector.id}\n💬 Содержание:\n${censored}`
+			const keyboard = await Keyboard_Swap(blank_build.length, user_check)
+			const corrected: any = blank_check.photo.includes('photo') ? await context.question( text, {keyboard, answerTimeLimit, attachment: blank_check.photo}) : await context.question( text, {keyboard, answerTimeLimit})
 			if (corrected.isTimeout) { await context.send(`⏰ Время ожидания случайного поиска анкеты истекло!`); await Keyboard_Index(context, `⌛ Обновление клавиатуры...`); return }
 			const config: any = {
 				'⛔ Налево': Blank_Unlike,
@@ -224,7 +225,10 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
 				continue
 			}
 			let censored = user_check.censored ? await Censored_Activation_Pro(selector.text) : selector.text
-			const corrected: any = await context.question(`📜 Анкета: ${selector.id}\n🔎 Совпадение: ${(selector.score*100).toFixed(2)}%\n💬 Содержание: ${censored}\n`, {	keyboard: await Keyboard_Swap(blank_build.length, user_check), answerTimeLimit })
+			// выдача анкеты с фото
+			const text = `📜 Анкета: ${selector.id}\n🔎 Совпадение: ${(selector.score*100).toFixed(2)}%\n💬 Содержание:\n${censored}\n`
+			const keyboard = await Keyboard_Swap(blank_build.length, user_check)
+			const corrected: any = blank_check.photo.includes('photo') ? await context.question( text, {keyboard, answerTimeLimit, attachment: blank_check.photo}) : await context.question( text, {keyboard, answerTimeLimit})
 			if (corrected.isTimeout) { await context.send(`⏰ Время ожидания поиска анкеты истекло!`); await Keyboard_Index(context, `⌛ Обновление клавиатуры...`); return }
 			const config: any = {
 				'⛔ Налево': Blank_Unlike,
@@ -291,7 +295,10 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
 				continue
 			}
 			let censored = user_check.censored ? await Censored_Activation_Pro(selector.text) : selector.text
-			const corrected: any = await context.question(`📜 Анкета: ${selector.id}\n🔎 Совпадение: ${(selector.score*100).toFixed(2)}%\n💬 Содержание: ${censored}\n`, {	keyboard: await Keyboard_Swap(blank_build.length, user_check), answerTimeLimit })
+			//выдача анкеты с фото
+			const text = `📜 Анкета: ${selector.id}\n🔎 Совпадение: ${(selector.score*100).toFixed(2)}%\n💬 Содержание:\n${censored}\n`
+			const keyboard = await Keyboard_Swap(blank_build.length, user_check)
+			const corrected: any = blank_check.photo.includes('photo') ? await context.question( text, {keyboard, answerTimeLimit, attachment: blank_check.photo}) : await context.question( text, {keyboard, answerTimeLimit})
 			if (corrected.isTimeout) { await context.send(`⏰ Время ожидания серфинга анкет истекло!`); await Keyboard_Index(context, `⌛ Обновление клавиатуры...`); return }
 			const config: any = {
 				'⛔ Налево': Blank_Unlike,
@@ -341,8 +348,6 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
 				if (corrected.isTimeout) { await context.send(`⏰ Время ожидания создания анкеты истекло!`); await Keyboard_Index(context, `⌛ Обновление клавиатуры...`); return }
 				if (corrected.text == '!сохранить') {
 					if (text_input.length < 30) { await context.send(`Анкету от 30 символов надо!`); continue }
-					const save = await prisma.blank.create({ data: { text: text_input, id_account: user_check.id } })
-					await context.send(`🔧 Вы успешно создали анкетку-конфетку под UID: ${save.id}`)
 					ender = false
 				} else {
 					if (corrected.text == '!отмена') {
@@ -354,6 +359,18 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
 					}
 				}
 			}
+			const corrected: any = await context.question(`🧷 Прикрепите фотографию из вашего публичного альбома`,
+				{	
+					keyboard: Keyboard.builder()
+					.textButton({ label: 'Буду без картинки', payload: { command: 'student' }, color: 'secondary' })
+					.oneTime().inline(),
+					answerTimeLimit
+				}
+			)
+			if (corrected.isTimeout) { await context.send(`⏰ Время ожидания создания анкеты истекло!`); await Keyboard_Index(context, `⌛ Обновление клавиатуры...`); return }
+			const photo_link = corrected.text && corrected.text == 'Буду без картинки' ? '' : await Photo_Upload(corrected)
+			const save = await prisma.blank.create({ data: { text: text_input, id_account: user_check.id, photo: photo_link } })
+			await context.send(`🔧 Вы успешно создали анкетку-конфетку под UID: ${save.id}`)
 		} else {
 			const blank = await prisma.blank.findFirst({ where: { id_account: user_check.id } })
 			await Logger(`(private chat) ~ starting self blank is viewed by <user> №${context.senderId}`)
@@ -370,7 +387,11 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
 				const count_unread = await prisma.mail.count({ where: { blank_to: blank.id, read: false }})
 				const counter_warn = await prisma.report.count({ where: { id_blank: blank.id } })
 				let censored = user_check.censored ? await Censored_Activation_Pro(blank.text) : blank.text
-				await Send_Message(user_check.idvk, `📜 Анкета: ${blank.id}\n💬 Содержание: ${censored}\n👁 Просмотров: ${count_vision}/${-1+count_max_vision}\n⚠ Предупреждений: ${counter_warn}/3\n✅ Принятых: ${count_success}\n🚫 Игноров: ${count_ignore}\n⌛ Ожидает: ${count_unread}\n❗ Потеряшек: ${count_wrong}`, keyboard)
+				if (blank.photo.includes('photo')) {
+					await Send_Message(user_check.idvk, `📜 Анкета: ${blank.id}\n💬 Содержание:\n${censored}\n👁 Просмотров: ${count_vision}/${-1+count_max_vision}\n⚠ Предупреждений: ${counter_warn}/3\n✅ Принятых: ${count_success}\n🚫 Игноров: ${count_ignore}\n⌛ Ожидает: ${count_unread}\n❗ Потеряшек: ${count_wrong}`, keyboard, blank.photo)
+				} else {
+					await Send_Message(user_check.idvk, `📜 Анкета: ${blank.id}\n💬 Содержание:\n${censored}\n👁 Просмотров: ${count_vision}/${-1+count_max_vision}\n⚠ Предупреждений: ${counter_warn}/3\n✅ Принятых: ${count_success}\n🚫 Игноров: ${count_ignore}\n⌛ Ожидает: ${count_unread}\n❗ Потеряшек: ${count_wrong}`, keyboard)
+				}
 			}
 		}
         await Logger(`(private chat) ~ finished self blank is viewed by <user> №${context.senderId}`)
@@ -396,7 +417,7 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
     	if (!confirm.status) { return; }
 		const blank_delete = await prisma.blank.delete({ where: { id: blank_check.id } })
         if (blank_delete) { 
-			await Send_Message(user_check.idvk, `✅ Успешно удалено:\n📜 Анкета: ${blank_delete.id}\n💬 Содержание: ${blank_delete.text}`)
+			await Send_Message(user_check.idvk, `✅ Успешно удалено:\n📜 Анкета: ${blank_delete.id}\n💬 Содержание:\n${blank_delete.text}`)
 			await Logger(`(private chat) ~ deleted self <blank> #${blank_delete.id} by <user> №${context.senderId}`)
 		}
 		await Keyboard_Index(context, `⌛ Удаление, мать учения, выдаем кнопку вызова спутника...`)
@@ -440,8 +461,6 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
 			if (corrected.isTimeout) { await context.send(`⏰ Время ожидания редактирования анкеты истекло!`); await Keyboard_Index(context, `⌛ Обновление клавиатуры...`); return }
 			if (corrected.text == '!сохранить') {
 				if (text_input.length < 30) { await context.send(`⚠ Анкету от 30 символов надо!`); continue }
-				const blank_edit = await prisma.blank.update({ where: { id: blank_check.id }, data: { text: text_input } })
-				await Send_Message(user_check.idvk, `✅ Успешно изменено:\n📜 Анкета: ${blank_edit.id}\n💬 Содержание: ${blank_edit.text}`)
 				ender = false
 			} else {
 				if (corrected.text == '!отмена') {
@@ -452,6 +471,22 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
 					status_check = `⚠ В анкете зарегистрировано ${text_input?.length} из ${corrected.text?.length} введенных вами символов, убедитесь в корректном отображении анкеты!`
 				}
 			}
+		}
+		const corrected: any = await context.question(`🧷 Прикрепите фотографию из вашего публичного альбома`,
+			{	
+				keyboard: Keyboard.builder()
+				.textButton({ label: 'Буду без картинки', payload: { command: 'student' }, color: 'secondary' })
+				.oneTime().inline(),
+				answerTimeLimit
+			}
+		)
+		if (corrected.isTimeout) { await context.send(`⏰ Время ожидания создания анкеты истекло!`); await Keyboard_Index(context, `⌛ Обновление клавиатуры...`); return }
+		const photo_link = corrected.text && corrected.text == 'Буду без картинки' ? '' : await Photo_Upload(corrected)
+		const blank_edit = await prisma.blank.update({ where: { id: blank_check.id }, data: { text: text_input, photo: photo_link } })
+		if (blank_edit.photo.includes('photo')) {
+			await Send_Message(user_check.idvk, `✅ Успешно изменено:\n📜 Анкета: ${blank_edit.id}\n💬 Содержание:\n${blank_edit.text}`, undefined, blank_edit.photo)
+		} else {
+			await Send_Message(user_check.idvk, `✅ Успешно изменено:\n📜 Анкета: ${blank_edit.id}\n💬 Содержание:\n${blank_edit.text}`)
 		}
         await Logger(`(private chat) ~ finished edit self <blank> #${blank_check.id} by <user> №${context.senderId}`)
 		await Keyboard_Index(context, `⌛ Изменение, отец учения, выдаем кнопку вызова спутника...`)
@@ -512,16 +547,13 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
 				await context.send(`🗿 Жалоба от @id${user?.idvk}(КрысаХ):\n💬 Заявление: ${report.text}\n\n`)
 			}
 			const user_warned = await prisma.account.findFirst({ where: { id: selector.id_account } })
-			const corrected: any = await context.question(`⚖ Вершится суд над следующей анкетой и ее автором:\n📜 Анкета: ${selector.id}\n👤 Автор: https://vk.com/id${user_warned?.idvk}\n💬 Содержание: ${selector.text}`,
-				{	
-					keyboard: Keyboard.builder()
-					.textButton({ label: '⛔Отклонить', payload: { command: 'student' }, color: 'secondary' })
-					.textButton({ label: '✅Заверить', payload: { command: 'citizen' }, color: 'secondary' }).row()
-					.textButton({ label: '🚫Назад', payload: { command: 'citizen' }, color: 'secondary' })
-					.oneTime().inline(),
-					answerTimeLimit
-				}
-			)
+			const text = `⚖ Вершится суд над следующей анкетой и ее автором:\n📜 Анкета: ${selector.id}\n👤 Автор: https://vk.com/id${user_warned?.idvk}\n💬 Содержание:\n${selector.text}`
+			const keyboard = new KeyboardBuilder()
+			.textButton({ label: '⛔Отклонить', payload: { command: 'student' }, color: 'secondary' })
+			.textButton({ label: '✅Заверить', payload: { command: 'citizen' }, color: 'secondary' }).row()
+			.textButton({ label: '🚫Назад', payload: { command: 'citizen' }, color: 'secondary' })
+			.oneTime().inline()
+			const corrected: any = selector.photo.includes('photo') ? await context.question( text, {keyboard, answerTimeLimit, attachment: selector.photo}) : await context.question( text, {keyboard, answerTimeLimit})
 			if (corrected.isTimeout) { await context.send(`⏰ Время ожидания судебной системы истекло!`); await Keyboard_Index(context, `⌛ Обновление клавиатуры...`); return }
 			if (corrected.text == '🚫Назад' || corrected.text == '!назад') {
 				await Send_Message(user_check.idvk, `✅ Успешная отмена просмотра заблокированных анкет.`)
