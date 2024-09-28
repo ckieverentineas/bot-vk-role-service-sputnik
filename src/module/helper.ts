@@ -273,7 +273,7 @@ export async function Researcher_Better_Blank(query: string, sentences: Blank[])
     }))).filter((q): q is { id: number, text: string, id_account: number, score: number } => q !== undefined);
     return matches.sort((a, b) => b.score - a.score);
 }
-export async function Researcher_Better_Blank_Target(query: string, sentence: Blank): Promise<Match> {
+export async function Researcher_Better_Blank_Target_Old(query: string, sentence: Blank): Promise<Match> {
     //const jaroWinklerScore = JaroWinklerDistance(query, sentence.text, {});
     const cosineScore = compareTwoStrings(query, sentence.text);
     const diceCoefficient = DiceCoefficient(query, sentence.text)

@@ -2,6 +2,7 @@ import { compareTwoStrings } from "string-similarity";
 import { DiceCoefficient, JaroWinklerDistance } from "natural";
 import { Blank } from "@prisma/client";
 import { generateSynonymSentences } from "./synonem";
+import { Sleep } from "../helper";
 
 
 const stopWords = new Set([
@@ -183,41 +184,48 @@ function normalizeWords(text: string): string[] {
 export async function Researcher_Better_Blank_Target(query: string, sentence: Blank): Promise<Match> {
     const normalizedQuery = normalizeWords(query).join(' ');
     const sentencesArray = sentence.text.split('.').map(s => s.trim()).filter(Boolean);
-
-    let highestScore = 0;
-
-    // Получаем все варианты предложений с синонимами для данного запроса
     const generatedSentences = generateSynonymSentences(normalizedQuery);
 
-    // Обрабатываем и сопоставляем каждое синонимное предложение
-    for (const generatedSentence of generatedSentences) {
-        const normalizedGeneratedText = normalizeWords(generatedSentence).join(' ');
+    const highestScores = await Promise.all(
+        generatedSentences.map(async (generatedSentence) => {
+            const normalizedGeneratedText = normalizeWords(generatedSentence).join(' ');
 
-        for (const text of sentencesArray) {
-            const normalizedText = normalizeWords(text).join(' ');
+            // Для хранения оценок схожести
+            let highestScore = 0;
 
-            // Оценка схожести по нескольким метрикам
-            const jaroWinklerScore = JaroWinklerDistance(normalizedGeneratedText, normalizedText, {});
-            const cosineScore = compareTwoStrings(normalizedGeneratedText, normalizedText);
-            const diceCoefficient = DiceCoefficient(normalizedGeneratedText, normalizedText);
+            // Обрабатываем предложения в параллельном цикле
+            await Promise.all(
+                sentencesArray.map(async (text) => {
+                    const normalizedText = normalizeWords(text).join(' ');
+                    
+                    // Оценка схожести по нескольким метрикам
+                    const jaroWinklerScore = JaroWinklerDistance(normalizedGeneratedText, normalizedText, {});
+                    const cosineScore = compareTwoStrings(normalizedGeneratedText, normalizedText);
+                    const diceCoefficient = DiceCoefficient(normalizedGeneratedText, normalizedText);
 
-            // Итоговая оценка схожести
-            const overallScore = (
-                jaroWinklerScore * 0.2 +
-                cosineScore * 0.2 +
-                diceCoefficient * 0.6
+                    // Итоговая оценка схожести
+                    const overallScore = (
+                        jaroWinklerScore * 0.2 +
+                        cosineScore * 0.2 +
+                        diceCoefficient * 0.6
+                    );
+
+                    highestScore = Math.max(highestScore, overallScore);
+                    //console.log(`${normalizedGeneratedText} <-> ${normalizedText}: ${overallScore}`);
+                })
             );
 
-            //console.log(`${normalizedGeneratedText} <-> ${normalizedText}: ${overallScore}`);
-            highestScore = Math.max(highestScore, overallScore);
-        }
-    }
+            return highestScore;
+        })
+    );
+
+    const maxScore = Math.max(...highestScores);
 
     return {
         id: sentence.id,
         text: sentence.text,
         id_account: sentence.id_account,
-        score: highestScore,
+        score: maxScore,
     };
 }
 

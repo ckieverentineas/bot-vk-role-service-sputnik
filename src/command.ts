@@ -4,7 +4,7 @@ import { Keyboard, KeyboardBuilder } from "vk-io";
 import { IQuestionMessageContext } from "vk-io-question";
 import { answerTimeLimit, chat_id, root, timer_text, vk } from ".";
 import prisma from "./module/prisma";
-import { Accessed, Confirm_User_Success, Keyboard_Index, Logger, Match, Online_Set, Parser_IDVK, Photo_Upload, Researcher_Better_Blank, Send_Message, User_Banned, User_Info } from "./module/helper";
+import { Accessed, Confirm_User_Success, Keyboard_Index, Logger, Match, Online_Set, Parser_IDVK, Photo_Upload, Researcher_Better_Blank, Researcher_Better_Blank_Target_Old, Send_Message, User_Banned, User_Info } from "./module/helper";
 import { abusivelist, Censored_Activation, Censored_Activation_Pro } from "./module/blacklist";
 import { Account, Blank, Mail } from "@prisma/client";
 import { Blank_Browser, Blank_Cleaner, Blank_Like, Blank_Like_Donate, Blank_Report, Blank_Unlike } from "./module/blank_swap";
@@ -209,7 +209,8 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
 			const black_list_other = await prisma.blackList.findFirst({ where: { id_account: user_bl_ch?.id ?? 0, idvk: user_check.idvk } })
 			if (black_list_other) { continue }
 			// вычисляем полученной анкете процент совпадения
-			blank_build.push(await Researcher_Better_Blank_Target(blank_check.text, blank))
+			const result = await Researcher_Better_Blank_Target_Old(blank_check.text, blank);
+			blank_build.push(result);
 			// сортируем список анкет шанса совпадения по убыванию
 			blank_build.sort((a, b) => b.score - a.score)
 			// режем до топ-50 анкет
@@ -280,7 +281,7 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
 			// если автор анкеты добавил меня в черном списке, то пропускаем
 			const black_list_other = await prisma.blackList.findFirst({ where: { id_account: user_bl_ch?.id ?? 0, idvk: user_check.idvk } })
 			if (black_list_other) { continue }
-			blank_build.push(await Researcher_Better_Blank_Target(ans.text, blank))
+			blank_build.push(await Researcher_Better_Blank_Target(ans.text.slice(0, 64), blank))
 			blank_build.sort((a, b) => b.score - a.score)
 			blank_build.length = Math.min(blank_build.length, 50); 
 		}
