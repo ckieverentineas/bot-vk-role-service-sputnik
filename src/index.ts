@@ -9,6 +9,7 @@ import prisma from './module/prisma';
 import { User_Registration } from './module/registration';
 import { Data_Registration_Page_Detector } from './module/defender';
 import { Counter_PK_Module } from './module/counter_pk';
+import { collectUniqueWordsAndFrequency } from './module/reseacher/dumper';
 dotenv.config()
 
 //загрузка из .env, задание параметров
@@ -83,3 +84,8 @@ vk.updates.start().then(() => {
 setInterval(Worker_Checker, 86400000);
 setInterval(Blank_Inactivity, 86400000);
 //process.on('warning', e => console.warn(e.stack))
+
+/*collectUniqueWordsAndFrequency().catch(e => {
+    console.error(e);
+    process.exit(1);
+});*/
