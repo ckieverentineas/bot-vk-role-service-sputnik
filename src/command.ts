@@ -25,19 +25,106 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
         const keyboard = new KeyboardBuilder()
     	.textButton({ label: '📃 Моя анкета', payload: { command: 'card_enter' }, color: 'secondary' })
 		.textButton({ label: `${mail_check ? '📬' : '📪'} Почта`, payload: { command: 'card_enter' }, color: 'secondary' }).row()
-    	.textButton({ label: '🔍 Поиск', payload: { command: 'inventory_enter' }, color: 'primary' })
-		.textButton({ label: '🎲 Рандом', payload: { command: 'shop_category_enter' }, color: 'positive' }).row()
 		.textButton({ label: '⚙ Цензура', payload: { command: 'shop_category_enter' }, color: 'negative' })
-    	.textButton({ label: '🌐 Браузер', payload: { command: 'shop_category_enter' }, color: 'negative' }).row()
-		.textButton({ label: '📐 Пкметр', payload: { command: 'shop_category_enter' }, color: 'positive' })
-    	if (await Accessed(context) != `user`) {
-    	    keyboard.textButton({ label: '⚖ Модерация', payload: { command: 'admin_enter' }, color: 'secondary' }).row()
-    	}
 		keyboard.textButton({ label: '☠ Банхаммер', payload: { command: 'admin_enter' }, color: 'primary' }).row()
+    	.textButton({ label: '🌐 Браузер', payload: { command: 'shop_category_enter' }, color: 'negative' })
+		.textButton({ label: '🔍 Поиск', payload: { command: 'inventory_enter' }, color: 'primary' }).row()
+		.textButton({ label: '🎲 Рандом', payload: { command: 'shop_category_enter' }, color: 'positive' })
+		.textButton({ label: '📐 Пкметр', payload: { command: 'shop_category_enter' }, color: 'positive' }).row()
+		if (user_check.donate || await Accessed(context) != `user`) { keyboard.textButton({ label: '🔧 Плагины', payload: { command: 'shop_category_enter' }, color: 'secondary' }) }
+		
+		
     	//keyboard.urlButton({ label: '⚡ Инструкция', url: `https://vk.com/@bank_mm-instrukciya-po-polzovaniu-botom-centrobanka-magomira` }).row()
+		
     	keyboard.callbackButton({ label: '🚫', payload: { command: 'exit' }, color: 'secondary' }).oneTime().inline()
 		await Send_Message(user_check.idvk, `🛰 Вы в системе поиска соролевиков, ${user_inf.first_name}, что изволите?`, keyboard)
         await Logger(`(private chat) ~ enter in main menu system is viewed by <user> №${context.senderId}`)
+    })
+	hearManager.hear(/🔧 Плагины|! Плагин|!плагин/, async (context: any) => {
+        if (context.peerType == 'chat') { return }
+        const user_check = await prisma.account.findFirst({ where: { idvk: context.senderId } })
+        if (!user_check) { return }
+		await Online_Set(context)
+		const user_inf = await User_Info(context)
+		
+        const keyboard = new KeyboardBuilder()
+    	keyboard.textButton({ label: '⚰ Архив', payload: { command: 'shop_category_enter' }, color: 'positive' })
+		.textButton({ label: '🎯 Анкета', payload: { command: 'shop_category_enter' }, color: 'positive' }).row()
+    	if (await Accessed(context) != `user`) {
+    	    keyboard.textButton({ label: '⚖ Модерация', payload: { command: 'admin_enter' }, color: 'secondary' }).row()
+    	}
+    	keyboard.callbackButton({ label: '🚫', payload: { command: 'exit' }, color: 'secondary' }).oneTime().inline()
+		await Send_Message(user_check.idvk, `🛰 Вы в системе поиска соролевиков, ${user_inf.first_name}, вы в меню расширенного функционала?`, keyboard)
+        await Logger(`(private chat) ~ enter in main menu system is viewed by <user> №${context.senderId}`)
+    })
+	//для архива
+	hearManager.hear(/⚰ Архив|!архив|!Архив|! Архив|! архив/, async (context: any) => {
+        if (context.peerType == 'chat') { return }
+        const user_check = await prisma.account.findFirst({ where: { idvk: context.senderId } })
+		const blank_check = await prisma.blank.findFirst({ where: { id_account: user_check?.id } })
+        if (!user_check) { return }
+		if (!user_check.donate) { return }
+		if (!blank_check) { return await context.send(`⚠ Создайте анкету`) }
+		if (blank_check.banned) {
+			await context.send(`💔 Ваша анкета заблокирована из-за жалоб до разбирательств`)
+			return
+		}
+		const banned_me = await User_Banned(context)
+		if (banned_me) { return }
+		await Online_Set(context)
+		let blank_build = []
+		let counter = 0
+		for (const blank of await prisma.$queryRaw<Blank[]>`SELECT * FROM Blank WHERE banned = false ORDER BY random() ASC`) {
+			if (blank.id_account == user_check.id) { continue }
+			const vision_check = await prisma.vision.findFirst({ where: { id_blank: blank.id, id_account: user_check.id } })
+			if (!vision_check) { continue }
+			// если автор анкеты в моем черном списке, то пропускаем
+			const user_bl_ch = await prisma.account.findFirst({ where: { id: blank.id_account}})
+			const black_list_my = await prisma.blackList.findFirst({ where: { id_account: user_check.id, idvk: user_bl_ch?.idvk ?? 0 } })
+			if (black_list_my) { continue }
+			// если автор анкеты добавил меня в черном списке, то пропускаем
+			const black_list_other = await prisma.blackList.findFirst({ where: { id_account: user_bl_ch?.id ?? 0, idvk: user_check.idvk } })
+			if (black_list_other) { continue }
+			if (counter > 50) { break }
+			blank_build.push(blank)
+			counter++
+		}
+		let ender = true
+		await Logger(`(private chat) ~ starting check random blank by <user> №${context.senderId}`)
+		while (ender && blank_build.length > 0) {
+			const target = Math.floor(Math.random() * blank_build.length)
+			const selector: Blank = blank_build[target]
+			const blank_check = await prisma.blank.findFirst({ where: { id: selector.id } })
+			if (!blank_check) { 
+				blank_build.splice(target, 1)
+				await Send_Message(user_check.idvk, `⚠ Внимание, следующая анкета была удалена владельцем в процессе просмотра и изъята из поиска:\n\n📜 Анкета: ${selector.id}\n💬 Содержание: ${selector.text}\n `)
+				continue
+			}
+			let censored = user_check.censored ? await Censored_Activation_Pro(selector.text) : selector.text
+			//выдача анкеты с фото
+			const text = `📜 Анкета из архива: ${selector.id}\n💬 Содержание:\n${censored}`
+			const keyboard = await Keyboard_Swap(blank_build.length, user_check)
+			const corrected: any = blank_check.photo.includes('photo') ? await context.question( text, {keyboard, answerTimeLimit, attachment: blank_check.photo}) : await context.question( text, {keyboard, answerTimeLimit})
+			if (corrected.isTimeout) { await context.send(`⏰ Время ожидания случайного поиска анкеты истекло!`); await Keyboard_Index(context, `⌛ Обновление клавиатуры...`); return }
+			const config: any = {
+				'⛔ Налево': Blank_Unlike,
+				'✅ Направо': Blank_Like,
+				'✏ Направо': Blank_Like_Donate,
+				'⚠ Жалоба': Blank_Report,
+			}
+			if (corrected.text in config) {
+				const commandHandler = config[corrected.text];
+				const ans = await commandHandler(context, user_check, selector, blank_build, target)
+			} else {
+				if (corrected.text == '🚫 Назад' || corrected.text == '!назад') {
+					await Send_Message(user_check.idvk, `✅ Успешная отмена рандомных анкет.`)
+					ender = false
+				} else { await Send_Message(user_check.idvk, `💡 Жмите только по кнопкам с иконками!`) }
+			}
+		}
+		if (blank_build.length == 0) { await Send_Message(user_check.idvk, `😿 Очередь анкет закончилась, попробуйте вызвать !рандом еще раз, иначе приходите позже.`)}
+        await Logger(`(private chat) ~ finished check random blank by <user> №${context.senderId}`)
+		await Keyboard_Index(context, `⌛ В рот этого казино! Выдаем кнопку вызова спутника...`)
     })
 	//почта
 	hearManager.hear(/📬 Почта|📪 Почта|!почта/, async (context: any) => {

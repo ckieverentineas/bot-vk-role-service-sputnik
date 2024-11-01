@@ -6,7 +6,9 @@ import { Keyboard } from "vk-io"
 import { answerTimeLimit, chat_id } from ".."
 
 export async function Blank_Like(context: any, user_check: Account, selector: Blank, blank_build: any, target: number) {
-    const blank_skip = await prisma.vision.create({ data: { id_account: user_check.id, id_blank: selector.id } })
+	const blank_check = await prisma.vision.findFirst({ where: { id_account: user_check.id, id_blank: selector.id }})
+	if (!blank_check) { const blank_skip = await prisma.vision.create({ data: { id_account: user_check.id, id_blank: selector.id } }) }
+    
 	blank_build.splice(target, 1)
 	await Send_Message(user_check.idvk, `✅ Анкета #${selector.id} вам зашла, отправляем информацию об этом его/её владельцу.`)
 	const user_nice = await prisma.account.findFirst({ where: { id: selector.id_account } })
@@ -16,7 +18,9 @@ export async function Blank_Like(context: any, user_check: Account, selector: Bl
 	await Logger(`(private chat) ~ clicked swipe for <blank> #${selector.id} by <user> №${context.senderId}`)
 }
 export async function Blank_Like_Donate(context: any, user_check: Account, selector: Blank, blank_build: any, target: number) {
-    const blank_skip = await prisma.vision.create({ data: { id_account: user_check.id, id_blank: selector.id } })
+    const blank_check = await prisma.vision.findFirst({ where: { id_account: user_check.id, id_blank: selector.id }})
+	if (!blank_check) { const blank_skip = await prisma.vision.create({ data: { id_account: user_check.id, id_blank: selector.id } }) }
+
 	blank_build.splice(target, 1)
 	let ender2 = true
 	let text_input = ''
@@ -57,7 +61,9 @@ export async function Blank_Like_Donate(context: any, user_check: Account, selec
 	}
 }
 export async function Blank_Unlike(context: any, user_check: Account, selector: Blank, blank_build: any, target: number) {
-    const blank_skip = await prisma.vision.create({ data: { id_account: user_check.id, id_blank: selector.id } })
+    const blank_check = await prisma.vision.findFirst({ where: { id_account: user_check.id, id_blank: selector.id }})
+	if (!blank_check) { const blank_skip = await prisma.vision.create({ data: { id_account: user_check.id, id_blank: selector.id } }) }
+
 	blank_build.splice(target, 1)
 	await Send_Message(user_check.idvk, `✅ Пропускаем анкету #${selector.id}.`)
 	await Logger(`(private chat) ~ clicked unswipe for <blank> #${selector.id} by <user> №${context.senderId}`)
@@ -96,7 +102,8 @@ export async function Blank_Report(context: any, user_check: Account, selector: 
 				await Send_Message(user_warn.idvk, `🚫 На вашу анкету #${selector.id} донесли крысы ${counter_warn}/3. Изымаем анкету из поиска до разбирательства модераторами.`)
 				await Send_Message(chat_id, `⚠ Анкета №${selector.id} изьята из поиска из-за жалоб, модераторы примите меры`)
 			}
-			const blank_skip = await prisma.vision.create({ data: { id_account: user_check.id, id_blank: selector.id } })
+			const blank_check = await prisma.vision.findFirst({ where: { id_account: user_check.id, id_blank: selector.id }})
+			if (!blank_check) { const blank_skip = await prisma.vision.create({ data: { id_account: user_check.id, id_blank: selector.id } }) }
 			blank_build.splice(target, 1)
 			ender2 = false
 		} else {
