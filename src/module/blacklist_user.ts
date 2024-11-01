@@ -46,7 +46,7 @@ export async function BlackList_Printer(context: any) {
                 keyboard: keyboard, answerTimeLimit
             }
         )
-        if (location_bt.isTimeout) { return await context.send(`⏰ Время ожидания в панеле управления черным списком истекло!`) }
+        if (location_bt.isTimeout) { return await context.send(`⏰ Время ожидания в панели управления черным списком истекло!`) }
         if (!location_bt.payload) {
             await context.send(`💡 Жмите только по кнопкам с иконками!`)
         } else {

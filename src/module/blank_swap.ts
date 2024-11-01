@@ -97,10 +97,11 @@ export async function Blank_Report(context: any, user_check: Account, selector: 
 			const counter_warn = await prisma.report.count({ where: { id_blank: selector.id, status: 'wait' } })
 			if (!user_warn) { return }
 			await Send_Message(user_warn.idvk, `✅ На вашу анкету #${selector.id} кто-то донес до модератора следующее: [${report_set.text}]!\n⚠ Жалоб: ${counter_warn}/3.\n💡 Не беспокойтесь, если это ложное обвинение, то после третьей жалобы модератор разблокирует вас.`)
+			await Send_Message(chat_id, `🧨 На анкету #${selector.id} кто-то донес до модератора следующее: [${report_set.text}]!\n⚠ Жалоб: ${counter_warn}/3.`)
 			if (counter_warn >= 3) {
 				await prisma.blank.update({ where: { id: selector.id }, data: { banned: true } })
 				await Send_Message(user_warn.idvk, `🚫 На вашу анкету #${selector.id} донесли крысы ${counter_warn}/3. Изымаем анкету из поиска до разбирательства модераторами.`)
-				await Send_Message(chat_id, `⚠ Анкета №${selector.id} изьята из поиска из-за жалоб, модераторы примите меры`)
+				await Send_Message(chat_id, `⚠ Анкета №${selector.id} изъята из поиска из-за жалоб, модераторы, примите меры!`)
 			}
 			const blank_check = await prisma.vision.findFirst({ where: { id_account: user_check.id, id_blank: selector.id }})
 			if (!blank_check) { const blank_skip = await prisma.vision.create({ data: { id_account: user_check.id, id_blank: selector.id } }) }

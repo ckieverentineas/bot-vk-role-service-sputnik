@@ -16,7 +16,7 @@ dotenv.config()
 export const token: string = String(process.env.token) //подгружаем токен группы
 export const root: number = Number(process.env.root) //подгружаем идвк рут пользователя
 export const chat_id: number = Number(process.env.chat_id) //подгружаем ид чата группы для логов
-export const group_id: number = Number(Group_Id_Get(token)) //автоматически узнаем идвк группы, которой принадлежит токен
+export let group_id: number = Number(Group_Id_Get(token)) //автоматически узнаем идвк группы, которой принадлежит токен
 export const timer_text = { answerTimeLimit: 600_000 } // таймер на пять минут для вопросов пользователям
 export const answerTimeLimit = 600_000 // альтернативный таймер на пять минут для вопросов пользователям
 export const starting_date = new Date(); // запись времени работы бота
@@ -46,6 +46,7 @@ commandUserRoutes(hearManager)
 
 //миддлевар для предварительной обработки сообщений
 vk.updates.on('message_new', async (context: any, next: any) => {
+	group_id =  group_id ? group_id : Number(await Group_Id_Get(token))
 	//await vk.api.messages.send({ peer_id: 463031671, random_id: 0, message: `тест2`, attachment: `photo200840769_457273112` } )
 	//Модуль вызова пкметра
 	const pk_counter_st = await Counter_PK_Module(context)

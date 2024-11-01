@@ -2,19 +2,23 @@ import { HearManager } from "@vk-io/hear";
 import { randomInt } from "crypto";
 import { Keyboard, KeyboardBuilder } from "vk-io";
 import { IQuestionMessageContext } from "vk-io-question";
-import { answerTimeLimit, chat_id, root, timer_text, vk } from ".";
+import { answerTimeLimit, chat_id, root, timer_text, token, vk } from ".";
 import prisma from "./module/prisma";
-import { Accessed, Confirm_User_Success, Keyboard_Index, Logger, Match, Online_Set, Parser_IDVK, Photo_Upload, Researcher_Better_Blank, Researcher_Better_Blank_Target_Old, Send_Message, User_Banned, User_Info } from "./module/helper";
+import { Accessed, checkGroupSubscriber, Confirm_User_Success, Group_Id_Get, Input_Number, Keyboard_Index, Logger, Match, Online_Set, Parser_IDVK, Photo_Upload, Researcher_Better_Blank, Researcher_Better_Blank_Target_Old, Send_Message, User_Banned, User_Info } from "./module/helper";
 import { abusivelist, Censored_Activation, Censored_Activation_Pro } from "./module/blacklist";
 import { Account, Blank, Mail } from "@prisma/client";
 import { Blank_Browser, Blank_Cleaner, Blank_Like, Blank_Like_Donate, Blank_Report, Blank_Unlike } from "./module/blank_swap";
 import { Keyboard_Swap } from "./module/keyboard";
 import { BlackList_Printer } from "./module/blacklist_user";
 import { Researcher_Better_Blank_Target } from "./module/reseacher/resheacher_up";
+import { ico_list } from "./module/icon_list";
+
+let group_id_now: number | null = null
 
 export function commandUserRoutes(hearManager: HearManager<IQuestionMessageContext>): void {
 	hearManager.hear(/!спутник|!Спутник/, async (context: any) => {
         if (context.peerType == 'chat') { return }
+		group_id_now =  group_id_now ? group_id_now : Number(await Group_Id_Get(token))
         const user_check = await prisma.account.findFirst({ where: { idvk: context.senderId } })
         if (!user_check) { return }
 		await Online_Set(context)
@@ -27,8 +31,12 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
 		.textButton({ label: `${mail_check ? '📬' : '📪'} Почта`, payload: { command: 'card_enter' }, color: 'secondary' }).row()
 		.textButton({ label: '⚙ Цензура', payload: { command: 'shop_category_enter' }, color: 'negative' })
 		keyboard.textButton({ label: '☠ Банхаммер', payload: { command: 'admin_enter' }, color: 'primary' }).row()
-    	.textButton({ label: '🌐 Браузер', payload: { command: 'shop_category_enter' }, color: 'negative' })
-		.textButton({ label: '🔍 Поиск', payload: { command: 'inventory_enter' }, color: 'primary' }).row()
+		if (await checkGroupSubscriber(context.senderId, group_id_now)) {
+			keyboard
+			.textButton({ label: '🌐 Браузер', payload: { command: 'shop_category_enter' }, color: 'negative' })
+			.textButton({ label: '🔍 Поиск', payload: { command: 'inventory_enter' }, color: 'primary' }).row()
+		}
+    	keyboard
 		.textButton({ label: '🎲 Рандом', payload: { command: 'shop_category_enter' }, color: 'positive' })
 		.textButton({ label: '📐 Пкметр', payload: { command: 'shop_category_enter' }, color: 'positive' }).row()
 		if (user_check.donate || await Accessed(context) != `user`) { keyboard.textButton({ label: '🔧 Плагины', payload: { command: 'shop_category_enter' }, color: 'secondary' }) }
@@ -49,13 +57,73 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
 		
         const keyboard = new KeyboardBuilder()
     	keyboard.textButton({ label: '⚰ Архив', payload: { command: 'shop_category_enter' }, color: 'positive' })
-		.textButton({ label: '🎯 Анкета', payload: { command: 'shop_category_enter' }, color: 'positive' }).row()
+		.textButton({ label: '🎯 Снайпер', payload: { command: 'shop_category_enter' }, color: 'positive' }).row()
     	if (await Accessed(context) != `user`) {
     	    keyboard.textButton({ label: '⚖ Модерация', payload: { command: 'admin_enter' }, color: 'secondary' }).row()
     	}
     	keyboard.callbackButton({ label: '🚫', payload: { command: 'exit' }, color: 'secondary' }).oneTime().inline()
-		await Send_Message(user_check.idvk, `🛰 Вы в системе поиска соролевиков, ${user_inf.first_name}, вы в меню расширенного функционала?`, keyboard)
+		await Send_Message(user_check.idvk, `🛰 Вы в системе поиска соролевиков, ${user_inf.first_name}. Добро пожаловать в меню расширенного функционала!`, keyboard)
         await Logger(`(private chat) ~ enter in main menu system is viewed by <user> №${context.senderId}`)
+    })
+	//для одиночного доступа к анкете
+	hearManager.hear(/🎯 Снайпер|!снайпер|!Снайпер|! Снайпер|! снайпер/, async (context: any) => {
+        if (context.peerType == 'chat') { return }
+        const user_check = await prisma.account.findFirst({ where: { idvk: context.senderId } })
+		const blank_check = await prisma.blank.findFirst({ where: { id_account: user_check?.id } })
+        if (!user_check) { return }
+		if (!user_check.donate) { return }
+		if (!blank_check) { return await context.send(`⚠ Создайте анкету`) }
+		if (blank_check.banned) {
+			await context.send(`💔 Ваша анкета заблокирована из-за жалоб до разбирательств`)
+			return
+		}
+		const banned_me = await User_Banned(context)
+		if (banned_me) { return }
+		await Online_Set(context)
+		let blank_build = []
+		let counter = 0
+		// меняем лимит лайков
+		const input_blank = await Input_Number(context, `Введите номер анкеты для доступа через гипер-пространство, игнорируя банхаммер и просмотренный список.\n${ico_list['help'].ico}Отправьте сообщение в чат для изменения:`, false)
+		if (!input_blank) { return await context.send(`Отмена гипер-прыжка к бланку`) }
+		const blank_get = await prisma.blank.findFirst({ where: { id: input_blank, banned: false } })
+		if (!blank_get) { return await context.send(`Анкета не найдена/заблокирована/удалена`) }
+		blank_build.push(blank_get)
+		let ender = true
+		await Logger(`(private chat) ~ starting check sniper blank by <user> №${context.senderId}`)
+		while (ender && blank_build.length > 0) {
+			const target = Math.floor(Math.random() * blank_build.length)
+			const selector: Blank = blank_build[target]
+			const blank_check = await prisma.blank.findFirst({ where: { id: selector.id } })
+			if (!blank_check) { 
+				blank_build.splice(target, 1)
+				await Send_Message(user_check.idvk, `⚠ Внимание, следующая анкета была удалена владельцем в процессе просмотра и изъята из поиска:\n\n📜 Анкета: ${selector.id}\n💬 Содержание: ${selector.text}\n `)
+				continue
+			}
+			let censored = user_check.censored ? await Censored_Activation_Pro(selector.text) : selector.text
+			//выдача анкеты с фото
+			const text = `📜 Анкета из архива: ${selector.id}\n💬 Содержание:\n${censored}`
+			const keyboard = await Keyboard_Swap(blank_build.length, user_check)
+			const corrected: any = blank_check.photo.includes('photo') ? await context.question( text, {keyboard, answerTimeLimit, attachment: blank_check.photo}) : await context.question( text, {keyboard, answerTimeLimit})
+			if (corrected.isTimeout) { await context.send(`⏰ Время ожидания снайпера анкеты истекло!`); await Keyboard_Index(context, `⌛ Обновление клавиатуры...`); return }
+			const config: any = {
+				'⛔ Налево': Blank_Unlike,
+				'✅ Направо': Blank_Like,
+				'✏ Направо': Blank_Like_Donate,
+				'⚠ Жалоба': Blank_Report,
+			}
+			if (corrected.text in config) {
+				const commandHandler = config[corrected.text];
+				const ans = await commandHandler(context, user_check, selector, blank_build, target)
+			} else {
+				if (corrected.text == '🚫 Назад' || corrected.text == '!назад') {
+					await Send_Message(user_check.idvk, `✅ Успешная отмена режима снайпера, в рот этого Купидона.`)
+					ender = false
+				} else { await Send_Message(user_check.idvk, `💡 Жмите только по кнопкам с иконками!`) }
+			}
+		}
+		if (blank_build.length == 0) { await Send_Message(user_check.idvk, `😿 Очередь анкет закончилась, попробуйте вызвать !снайпер еще раз, иначе приходите позже.`)}
+        await Logger(`(private chat) ~ finished check sniper blank by <user> №${context.senderId}`)
+		await Keyboard_Index(context, `⌛ Снайпер Снайпер Снайперок, в рот этого Купидона! Выдаем кнопку вызова спутника...`)
     })
 	//для архива
 	hearManager.hear(/⚰ Архив|!архив|!Архив|! Архив|! архив/, async (context: any) => {
@@ -90,7 +158,7 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
 			counter++
 		}
 		let ender = true
-		await Logger(`(private chat) ~ starting check random blank by <user> №${context.senderId}`)
+		await Logger(`(private chat) ~ starting check acrhive blank by <user> №${context.senderId}`)
 		while (ender && blank_build.length > 0) {
 			const target = Math.floor(Math.random() * blank_build.length)
 			const selector: Blank = blank_build[target]
@@ -105,7 +173,7 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
 			const text = `📜 Анкета из архива: ${selector.id}\n💬 Содержание:\n${censored}`
 			const keyboard = await Keyboard_Swap(blank_build.length, user_check)
 			const corrected: any = blank_check.photo.includes('photo') ? await context.question( text, {keyboard, answerTimeLimit, attachment: blank_check.photo}) : await context.question( text, {keyboard, answerTimeLimit})
-			if (corrected.isTimeout) { await context.send(`⏰ Время ожидания случайного поиска анкеты истекло!`); await Keyboard_Index(context, `⌛ Обновление клавиатуры...`); return }
+			if (corrected.isTimeout) { await context.send(`⏰ Время ожидания архивного поиска анкеты истекло!`); await Keyboard_Index(context, `⌛ Обновление клавиатуры...`); return }
 			const config: any = {
 				'⛔ Налево': Blank_Unlike,
 				'✅ Направо': Blank_Like,
@@ -117,21 +185,22 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
 				const ans = await commandHandler(context, user_check, selector, blank_build, target)
 			} else {
 				if (corrected.text == '🚫 Назад' || corrected.text == '!назад') {
-					await Send_Message(user_check.idvk, `✅ Успешная отмена рандомных анкет.`)
+					await Send_Message(user_check.idvk, `✅ Успешная отмена архивных анкет.`)
 					ender = false
 				} else { await Send_Message(user_check.idvk, `💡 Жмите только по кнопкам с иконками!`) }
 			}
 		}
-		if (blank_build.length == 0) { await Send_Message(user_check.idvk, `😿 Очередь анкет закончилась, попробуйте вызвать !рандом еще раз, иначе приходите позже.`)}
-        await Logger(`(private chat) ~ finished check random blank by <user> №${context.senderId}`)
-		await Keyboard_Index(context, `⌛ В рот этого казино! Выдаем кнопку вызова спутника...`)
+		if (blank_build.length == 0) { await Send_Message(user_check.idvk, `😿 Очередь анкет закончилась, попробуйте вызвать !архив еще раз, иначе приходите позже.`)}
+        await Logger(`(private chat) ~ finished check acrhive blank by <user> №${context.senderId}`)
+		await Keyboard_Index(context, `⌛ Архивариус, знание сила, мудрость идиллия! Выдаем кнопку вызова спутника...`)
     })
 	//почта
 	hearManager.hear(/📬 Почта|📪 Почта|!почта/, async (context: any) => {
 		if (context.peerType == 'chat') { return }
         const user_check = await prisma.account.findFirst({ where: { idvk: context.senderId } })
+		if (!user_check) { return }
 		const blank_check = await prisma.blank.findFirst({ where: { id_account: user_check?.id } })
-        if (!user_check || !blank_check) { return }
+        if (!blank_check) { return await context.send(`Чтобы воспользоваться почтой, нажмите кнопку в главном меню "📃 Моя анкета" или вызовите команду !анкета в чате для создания анкеты персонажа`)}
 		if (blank_check.banned) {
 			await context.send(`💔 Ваша анкета заблокирована из-за жалоб до разбирательств`)
 			return
@@ -400,7 +469,7 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
 				const ans = await commandHandler(context, user_check, selector, blank_build, 0)
 			} else {
 				if (corrected.text == '🚫 Назад' || corrected.text == '!назад') {
-					await Send_Message(user_check.idvk, `✅ Успешная отмена поиска анкет через  браузер.`)
+					await Send_Message(user_check.idvk, `✅ Успешная отмена поиска анкет через браузер.`)
 					ender = false
 				} else { await Send_Message(user_check.idvk, `💡 Жмите только по кнопкам с иконками!`) }
 			}

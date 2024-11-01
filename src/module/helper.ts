@@ -1,11 +1,12 @@
 import { Attachment, Keyboard, KeyboardBuilder, PhotoAttachment, VK } from "vk-io";
-import { answerTimeLimit, chat_id, group_id, root, starting_date, vk } from "..";
+import { answerTimeLimit, chat_id, group_id, root, starting_date, timer_text, vk } from "..";
 import { Account, Blank } from "@prisma/client";
 import prisma from "./prisma";
 import { MessagesSendResponse } from "vk-io/lib/api/schemas/responses";
 import { compareTwoStrings } from "string-similarity";
 import { DamerauLevenshteinDistance, DiceCoefficient, JaroWinklerDistance, LevenshteinDistance } from "natural";
 import * as fs from 'fs/promises';
+import { ico_list } from "./icon_list";
 
 export function Sleep(ms: number) {
     return new Promise((resolve) => {
@@ -14,6 +15,7 @@ export function Sleep(ms: number) {
 }
 //автополучение идвк группы
 export async function Group_Id_Get(token: string) {
+    //console.log(`Вычисляем ид группы`)
 	const vk = new VK({ token: token, apiLimit: 1 });
 	const [group] = await vk.api.groups.getById(vk);
 	const groupId = group.id;
@@ -334,7 +336,7 @@ export async function Blank_Inactivity() {
             const blank_del = await prisma.blank.delete({ where: { id: blank.id } })
             if (!blank_del) { continue }
             await Send_Message(online_check.idvk, `⛔ Вы были оффлайн больше месяца, ваша анкета №${blank.id} удалена! Вот ее содержание:\n\n${blank.text}\n\n⚠ Если вы все еще ищете сорола, то опубликуйте новую анкету`)
-            await Send_Message(chat_id, `⚠ Анкета №${blank.id} изьята из поиска из-за неактивности клиента`)
+            await Send_Message(chat_id, `⚠ Анкета №${blank.id} изъята из поиска из-за неактивности клиента.`)
         }
     }
     Logger(`(system) ~ complete clear blanks inactivity by <system> №0`)
@@ -441,3 +443,52 @@ export async function Photo_Upload(context: any) {
     //await vk.api.messages.send({ peer_id: 463031671, random_id: 0, message: `тест`, attachment: attachmentStr } )
     return ''
 }
+
+export async function Input_Number(context: any, prompt: string, float: boolean, limit?: number) {
+    limit = limit ?? 300
+    let input_tr = false
+    let input = 0
+	while (input_tr == false) {
+		const name = await context.question( `${ico_list['attach'].ico} ${prompt}\n\n${ico_list['warn'].ico} Допустимый лимит символов: ${limit}`, timer_text)
+		if (name.isTimeout) { await context.send(`${ico_list['time'].ico} Время ожидания ввода истекло!`); return false }
+		if (name.text.length <= limit && name.text.length > 0) {
+            const confirma = await context.question( `${ico_list['question'].ico} Вы ввели: ${name.text}\n Вы уверены?`, {	
+				keyboard: Keyboard.builder()
+				.textButton({ label: `${ico_list['success'].ico} Да`, color: 'positive' })
+				.textButton({ label: `${ico_list['cancel'].ico} Нет`, color: 'negative' }).row()
+                .textButton({ label: `${ico_list['cancel'].ico} Назад`, color: 'primary' })
+				.oneTime().inline(), answerTimeLimit
+			})
+		    if (confirma.isTimeout) { await context.send(`${ico_list['time'].ico} Время ожидания подтверждения ввода истекло!`); return false }
+            if (confirma.text == `${ico_list['success'].ico} Да`) {
+                if (typeof Number(name.text) === "number") {
+                    const inputer = float ? Number(name.text) : Math.floor(Number(name.text))
+                    if (inputer < 0) {
+                        await context.send(`${ico_list['warn'].ico} Введите положительное число!`);
+                        continue
+                    }
+                    if (Number.isNaN(inputer)) {
+                        await context.send(`${ico_list['warn'].ico} Не ну реально, ты дурак/дура или как? Число напиши нафиг!`);
+                        continue
+                    }
+                    input = inputer
+                    input_tr = true
+                } else {
+                    await context.send(`${ico_list['warn'].ico} Необходимо ввести число!`);
+                    continue
+                }
+                
+            } else {
+                if (confirma.text == `${ico_list['cancel'].ico} Назад`) { await context.send(`${ico_list['cancel'].ico} Ввод прерван пользователем`); return false }
+                continue
+            }
+		} else { 
+            await context.send(`${ico_list['warn'].ico} Вы превысили лимит символов: ${name.text.length}/${limit}`)
+        }
+	}
+    return input
+}
+
+export const checkGroupSubscriber = async (userId: any, groupId: any) => {
+    return await vk.api.groups.isMember({ group_id: groupId, user_id: userId }) === 1;
+};
