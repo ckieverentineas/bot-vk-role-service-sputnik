@@ -49,7 +49,7 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
 		await Send_Message(user_check.idvk, `🛰 Вы в системе поиска соролевиков, ${user_inf.first_name}, что изволите?`, keyboard)
         await Logger(`(private chat) ~ enter in main menu system is viewed by <user> №${context.senderId}`)
     })
-	hearManager.hear(/🔧 Плагины|! Плагин|!плагин/, async (context: any) => {
+	hearManager.hear(/🔧 Плагины|!плагин|!Плагин/, async (context: any) => {
         if (context.peerType == 'chat') { return }
         const user_check = await prisma.account.findFirst({ where: { idvk: context.senderId } })
         if (!user_check) { return }
@@ -67,7 +67,7 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
         await Logger(`(private chat) ~ enter in main menu system is viewed by <user> №${context.senderId}`)
     })
 	//для одиночного доступа к анкете
-	hearManager.hear(/🎯 Снайпер|!снайпер|!Снайпер|! Снайпер|! снайпер/, async (context: any) => {
+	hearManager.hear(/🎯 Снайпер|!снайпер|!Снайпер/, async (context: any) => {
         if (context.peerType == 'chat') { return }
         const user_check = await prisma.account.findFirst({ where: { idvk: context.senderId } })
 		const blank_check = await prisma.blank.findFirst({ where: { id_account: user_check?.id } })
@@ -127,7 +127,7 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
 		await Keyboard_Index(context, `⌛ Снайпер Снайпер Снайперок, в рот этого Купидона! Выдаем кнопку вызова спутника...`)
     })
 	//для архива
-	hearManager.hear(/⚰ Архив|!архив|!Архив|! Архив|! архив/, async (context: any) => {
+	hearManager.hear(/⚰ Архив|!архив|!Архив/, async (context: any) => {
         if (context.peerType == 'chat') { return }
         const user_check = await prisma.account.findFirst({ where: { idvk: context.senderId } })
 		const blank_check = await prisma.blank.findFirst({ where: { id_account: user_check?.id } })
@@ -196,7 +196,7 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
 		await Keyboard_Index(context, `⌛ Архивариус, знание сила, мудрость идиллия! Выдаем кнопку вызова спутника...`)
     })
 	//почта
-	hearManager.hear(/📬 Почта|📪 Почта|!почта/, async (context: any) => {
+	hearManager.hear(/📬 Почта|📪 Почта|!почта|!Почта/, async (context: any) => {
 		if (context.peerType == 'chat') { return }
         const user_check = await prisma.account.findFirst({ where: { idvk: context.senderId } })
 		if (!user_check) { return }
@@ -269,7 +269,7 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
 		await Keyboard_Index(context, `⌛ Кибер совиная почта на связи, выдаем кнопку вызова спутника...`)
     })
 	//для рандома
-	hearManager.hear(/🎲 Рандом|!рандом/, async (context: any) => {
+	hearManager.hear(/🎲 Рандом|!рандом|!Рандом/, async (context: any) => {
         if (context.peerType == 'chat') { return }
         const user_check = await prisma.account.findFirst({ where: { idvk: context.senderId } })
 		const blank_check = await prisma.blank.findFirst({ where: { id_account: user_check?.id } })
@@ -337,7 +337,7 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
 		await Keyboard_Index(context, `⌛ В рот этого казино! Выдаем кнопку вызова спутника...`)
     })
 	//для поиска
-	hearManager.hear(/🔍 Поиск|!поиск/, async (context: any) => {
+	hearManager.hear(/🔍 Поиск|!поиск|!Поиск/, async (context: any) => {
         if (context.peerType == 'chat') { return }
         const user_check = await prisma.account.findFirst({ where: { idvk: context.senderId } })
 		const blank_check = await prisma.blank.findFirst({ where: { id_account: user_check?.id } })
@@ -410,7 +410,7 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
 		await Keyboard_Index(context, `⌛ А давайте закроем глаза и представим того самого человека... Выдаем кнопку вызова спутника...`)
     })
 	//для браузера
-	hearManager.hear(/🌐 Браузер|!браузер/, async (context: any) => {
+	hearManager.hear(/🌐 Браузер|!браузер|!Браузер/, async (context: any) => {
         if (context.peerType == 'chat') { return }
         const user_check = await prisma.account.findFirst({ where: { idvk: context.senderId } })
 		const blank_check = await prisma.blank.findFirst({ where: { id_account: user_check?.id } })
@@ -423,6 +423,9 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
 		const banned_me = await User_Banned(context)
 		if (banned_me) { return }
 		await Online_Set(context)
+		if (!await checkGroupSubscriber(context.senderId, group_id_now)) {
+			return
+		}
 		const ans = await Blank_Browser(context, user_check)
 		if (!ans.status) { return await context.send(`🔧 Вы отменили поиск в браузере`) }
 		let blank_build = []
@@ -480,7 +483,7 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
 		await Keyboard_Index(context, `⌛ Хватит искать и серфить? Нет не хватит, выдаем кнопку вызова спутника...`)
     })
 	// для анкеты
-	hearManager.hear(/📃 Моя анкета|!анкета/, async (context: any) => {
+	hearManager.hear(/📃 Моя анкета|!анкета|!Анкета/, async (context: any) => {
         if (context.peerType == 'chat') { return }
         const user_check = await prisma.account.findFirst({ where: { idvk: context.senderId } })
         if (!user_check) { return }
@@ -654,7 +657,7 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
         await Logger(`(private chat) ~ finished edit self <blank> #${blank_check.id} by <user> №${context.senderId}`)
 		await Keyboard_Index(context, `⌛ Изменение, отец учения, выдаем кнопку вызова спутника...`)
     })
-	hearManager.hear(/⚙ Цензура|!цензура/, async (context: any) => {
+	hearManager.hear(/⚙ Цензура|!цензура|!Цензура/, async (context: any) => {
         if (context.peerType == 'chat') { return }
         const user_check = await prisma.account.findFirst({ where: { idvk: context.senderId } })
         if (!user_check) { return }
@@ -668,7 +671,7 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
 		}
 		await Keyboard_Index(context, `⌛ Ух ты, сейчас как все запикается! Выдаем кнопку вызова спутника...`)
     })
-	hearManager.hear(/!права/, async (context) => {
+	hearManager.hear(/!права|!Права/, async (context) => {
 		if (context.peerType == 'chat') { return }
         if (context.isOutbox == false && (context.senderId == root || await Accessed(context) != 'user') && context.text) {
             const target: number = Number(await Parser_IDVK(context.text)) || 0
@@ -689,7 +692,7 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
         }
 		await Keyboard_Index(context, `⌛ Сегодня дали права - завтра отжали!`)
     })
-	hearManager.hear(/⚖ Модерация|!модерация/, async (context: any) => {
+	hearManager.hear(/⚖ Модерация|!модерация|!Модерация/, async (context: any) => {
 		if (context.peerType == 'chat') { return }
         const user_check = await prisma.account.findFirst({ where: { idvk: context.senderId } })
 		if (!user_check) { return }
@@ -766,7 +769,7 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
         await Logger(`In private chat, did backup database by admin ${context.senderId}`)
 		await Keyboard_Index(context, `⌛ Резервное копирование, как зарядка, сегодня делаешь - завтра нет!`)
     })
-	hearManager.hear(/!бан/, async (context) => {
+	hearManager.hear(/!бан|!Бан/, async (context) => {
 		if (context.peerType == 'chat') { return }
         if (context.isOutbox == false && (context.senderId == root || await Accessed(context) != 'user') && context.text) {
 			const target = await Parser_IDVK(context.text)
@@ -791,7 +794,7 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
         }
 		await Keyboard_Index(context, `⌛  Забаньте меня полностью!`)
     })
-	hearManager.hear(/!донатер/, async (context) => {
+	hearManager.hear(/!донатер|!Донатер/, async (context) => {
 		if (context.peerType == 'chat') { return }
         if (context.isOutbox == false && (context.senderId == root || await Accessed(context) != 'user') && context.text) {
 			const target = await Parser_IDVK(context.text)
@@ -811,7 +814,7 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
         }
 		await Keyboard_Index(context, `⌛ Мы отвественны за тех, кто задонатил!`)
     })
-	hearManager.hear(/☠ Банхаммер|!чс/, async (context) => {
+	hearManager.hear(/☠ Банхаммер|!чс|!Чс/, async (context) => {
 		if (context.peerType == 'chat') { return }
         await BlackList_Printer(context)
 		await Keyboard_Index(context, `⌛ Туда их всех, не так ли?!`)
