@@ -397,52 +397,7 @@ export async function Exiter(context: any) {
     })
 }
 
-export async function Photo_Uploads(context: any) {
-    // Получаем информацию о вложенной фотографии
-    const attachment = context.message.attachments[0];
-    const photoId = attachment.photo.id;
-    const ownerId = attachment.photo.owner_id;
-    // Формат для вложения
-    const attachmentStr = `photo${ownerId}_${photoId}`;
-    const photoUrl = attachment.photo.sizes[attachment.photo.sizes.length - 1].url
-    // Сохраняем фото для пользователя
-    const userId = context.senderId;
-    console.log(attachmentStr)
-    await context.send('Фото сохранено!');
-    try {
-        await context.send({ attachment: attachmentStr });
-        return attachmentStr
-    } catch (e) {
-        await context.send(`Произошла ошибка: ${e}`);
-    }
-    
-    //await vk.api.messages.send({ peer_id: 463031671, random_id: 0, message: `тест`, attachment: attachmentStr } )
-    return ''
-}
 
-export async function Photo_Upload(context: any) {
-    // Получаем информацию о вложенной фотографии
-    const attachment = context.attachments[0];
-    //console.log(context.attachments[0])
-    const photoId = attachment.id;
-    const ownerId = attachment.ownerId;
-    // Формат для вложения
-    const attachmentStr = `photo${ownerId}_${photoId}_${attachment.accessKey}`;
-    //const photoUrl = attachment.photo.sizes[attachment.photo.sizes.length - 1].url
-    // Сохраняем фото для пользователя
-    //const userId = context.senderId;
-    //console.log(attachmentStr)
-    //await context.send('Фото сохранено!');
-    try {
-        //console.log({ attachment: attachmentStr });
-        return attachmentStr
-    } catch (e) {
-        await Logger(`Произошла ошибка: ${e}`);
-    }
-    
-    //await vk.api.messages.send({ peer_id: 463031671, random_id: 0, message: `тест`, attachment: attachmentStr } )
-    return ''
-}
 
 export async function Input_Number(context: any, prompt: string, float: boolean, limit?: number) {
     limit = limit ?? 300

@@ -4,3 +4,5 @@ src/temp
 build
 prisma/dev.db
 .env
+out/
+temp/

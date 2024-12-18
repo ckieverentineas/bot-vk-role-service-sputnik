@@ -4,7 +4,7 @@ import { Keyboard, KeyboardBuilder } from "vk-io";
 import { IQuestionMessageContext } from "vk-io-question";
 import { answerTimeLimit, chat_id, root, timer_text, token, vk } from ".";
 import prisma from "./module/prisma";
-import { Accessed, checkGroupSubscriber, Confirm_User_Success, Group_Id_Get, Input_Number, Keyboard_Index, Logger, Match, Online_Set, Parser_IDVK, Photo_Upload, Researcher_Better_Blank, Researcher_Better_Blank_Target_Old, Send_Message, User_Banned, User_Info } from "./module/helper";
+import { Accessed, checkGroupSubscriber, Confirm_User_Success, Group_Id_Get, Input_Number, Keyboard_Index, Logger, Match, Online_Set, Parser_IDVK, Researcher_Better_Blank, Researcher_Better_Blank_Target_Old, Send_Message, User_Banned, User_Info } from "./module/helper";
 import { abusivelist, Censored_Activation, Censored_Activation_Pro } from "./module/blacklist";
 import { Account, Blank, Mail } from "@prisma/client";
 import { Blank_Browser, Blank_Cleaner, Blank_Like, Blank_Like_Donate, Blank_Report, Blank_Unlike } from "./module/blank_swap";
@@ -12,6 +12,7 @@ import { Keyboard_Swap } from "./module/keyboard";
 import { BlackList_Printer } from "./module/blacklist_user";
 import { Researcher_Better_Blank_Target } from "./module/reseacher/resheacher_up";
 import { ico_list } from "./module/icon_list";
+import { Photo_Upload_Pro } from "./module/download_photo";
 
 let group_id_now: number | null = null
 
@@ -528,7 +529,7 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
 				}
 			)
 			if (corrected.isTimeout) { await context.send(`⏰ Время ожидания создания анкеты истекло!`); await Keyboard_Index(context, `⌛ Обновление клавиатуры...`); return }
-			const photo_link = corrected.text && corrected.text == 'Буду без картинки' ? '' : await Photo_Upload(corrected)
+			const photo_link = corrected.text && corrected.text == 'Буду без картинки' ? '' : await Photo_Upload_Pro(corrected)
 			const save = await prisma.blank.create({ data: { text: text_input, id_account: user_check.id, photo: photo_link } })
 			await context.send(`🔧 Вы успешно создали анкетку-конфетку под UID: ${save.id}`)
 		} else {
@@ -643,7 +644,7 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
 			}
 		)
 		if (corrected.isTimeout) { await context.send(`⏰ Время ожидания создания анкеты истекло!`); await Keyboard_Index(context, `⌛ Обновление клавиатуры...`); return }
-		const photo_link = corrected.text && corrected.text == 'Буду без картинки' ? '' : await Photo_Upload(corrected)
+		const photo_link = corrected.text && corrected.text == 'Буду без картинки' ? '' : await Photo_Upload_Pro(corrected)
 		const blank_edit = await prisma.blank.update({ where: { id: blank_check.id }, data: { text: text_input, photo: photo_link } })
 		if (blank_edit.photo.includes('photo')) {
 			await Send_Message(user_check.idvk, `✅ Успешно изменено:\n📜 Анкета: ${blank_edit.id}\n💬 Содержание:\n${blank_edit.text}`, undefined, blank_edit.photo)
