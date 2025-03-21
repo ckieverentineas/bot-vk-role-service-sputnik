@@ -62,7 +62,7 @@ vk.updates.on('message_new', async (context: any, next: any) => {
 	//если пользователя нет, то начинаем регистрацию
 	if (!user_check) { await User_Registration(context); return next(); }
 	await Online_Set(context)
-	await Keyboard_Index(context, `⌛ Загрузка, пожалуйста подождите...`)
+	await Keyboard_Index(context, `⌛ Загрузка, пожалуйста, подождите...`)
 	return next();
 })
 

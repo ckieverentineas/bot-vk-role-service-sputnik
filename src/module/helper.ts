@@ -423,7 +423,7 @@ export async function Input_Number(context: any, prompt: string, float: boolean,
                         continue
                     }
                     if (Number.isNaN(inputer)) {
-                        await context.send(`${ico_list['warn'].ico} Не ну реально, ты дурак/дура или как? Число напиши нафиг!`);
+                        await context.send(`${ico_list['warn'].ico} Не, ну реально, ты дурак/дура или как? Число напиши нафиг!`);
                         continue
                     }
                     input = inputer

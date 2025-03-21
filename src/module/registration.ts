@@ -30,7 +30,7 @@ export async function User_Registration(context: any) {
     if (visit.isTimeout) { return await context.send(`⏰ Время ожидания активности истекло!`) }
     const save = await prisma.account.create({	data: {	idvk: context.senderId } })
     const info = await User_Info(context)
-    await context.send(`⌛ Хранитель вас увидел и сказал:\n — Добро пожаловать в Спутник! \n ⚖Вы зарегистрировались в системе, ${info.first_name}\n 🕯 GUID: ${save.id}. \n 🎥 idvk: ${save.idvk}\n ⚰ Дата Регистрации: ${save.crdate}\n`)
+    await context.send(`⌛ Хранитель вас увидел и сказал:\n — Добро пожаловать в Спутник! \n ⚖Вы зарегистрировались в системе, ${info.first_name}\n 🕯 GUID: ${save.id}. \n 🎥 idvk: ${save.idvk}\n ⚰ Дата регистрации: ${save.crdate}\n`)
     await Logger(`In database created new user with uid [${save.id}] and idvk [${context.senderId}]`)
     /*await context.send(`⚠ Настоятельно рекомендуем ознакомиться с инструкцией эксплуатации системы "Центробанк Магомира":`,{ 	
         keyboard: Keyboard.builder()

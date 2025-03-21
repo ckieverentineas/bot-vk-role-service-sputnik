@@ -107,24 +107,24 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
 			const corrected: any = blank_check.photo.includes('photo') ? await context.question( text, {keyboard, answerTimeLimit, attachment: blank_check.photo}) : await context.question( text, {keyboard, answerTimeLimit})
 			if (corrected.isTimeout) { await context.send(`⏰ Время ожидания снайпера анкеты истекло!`); await Keyboard_Index(context, `⌛ Обновление клавиатуры...`); return }
 			const config: any = {
-				'⛔ Налево': Blank_Unlike,
-				'✅ Направо': Blank_Like,
-				'✏ Направо': Blank_Like_Donate,
+				'⛔ Мимо': Blank_Unlike,
+				'✅ Отклик': Blank_Like,
+				'✏ Письмо': Blank_Like_Donate,
 				'⚠ Жалоба': Blank_Report,
 			}
 			if (corrected.text in config) {
 				const commandHandler = config[corrected.text];
 				const ans = await commandHandler(context, user_check, selector, blank_build, target)
 			} else {
-				if (corrected.text == '🚫 Назад' || corrected.text == '!назад') {
-					await Send_Message(user_check.idvk, `✅ Успешная отмена режима снайпера, в рот этого Купидона.`)
+				if (corrected.text == '🚫 Стоп' || corrected.text == '!стоп') {
+					await Send_Message(user_check.idvk, `✅ Успешная отмена режима снайпера, в рот этого купидона.`)
 					ender = false
 				} else { await Send_Message(user_check.idvk, `💡 Жмите только по кнопкам с иконками!`) }
 			}
 		}
 		if (blank_build.length == 0) { await Send_Message(user_check.idvk, `😿 Очередь анкет закончилась, попробуйте вызвать !снайпер еще раз, иначе приходите позже.`)}
         await Logger(`(private chat) ~ finished check sniper blank by <user> №${context.senderId}`)
-		await Keyboard_Index(context, `⌛ Снайпер Снайпер Снайперок, в рот этого Купидона! Выдаем кнопку вызова спутника...`)
+		await Keyboard_Index(context, `⌛ Снайпер-снайпер-снайперок, в рот этого купидона! Выдаем кнопку вызова спутника...`)
     })
 	//для архива
 	hearManager.hear(/⚰ Архив|!архив|!Архив/, async (context: any) => {
@@ -176,16 +176,16 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
 			const corrected: any = blank_check.photo.includes('photo') ? await context.question( text, {keyboard, answerTimeLimit, attachment: blank_check.photo}) : await context.question( text, {keyboard, answerTimeLimit})
 			if (corrected.isTimeout) { await context.send(`⏰ Время ожидания архивного поиска анкеты истекло!`); await Keyboard_Index(context, `⌛ Обновление клавиатуры...`); return }
 			const config: any = {
-				'⛔ Налево': Blank_Unlike,
-				'✅ Направо': Blank_Like,
-				'✏ Направо': Blank_Like_Donate,
+				'⛔ Мимо': Blank_Unlike,
+				'✅ Отклик': Blank_Like,
+				'✏ Письмо': Blank_Like_Donate,
 				'⚠ Жалоба': Blank_Report,
 			}
 			if (corrected.text in config) {
 				const commandHandler = config[corrected.text];
 				const ans = await commandHandler(context, user_check, selector, blank_build, target)
 			} else {
-				if (corrected.text == '🚫 Назад' || corrected.text == '!назад') {
+				if (corrected.text == '🚫 Стоп' || corrected.text == '!стоп') {
 					await Send_Message(user_check.idvk, `✅ Успешная отмена архивных анкет.`)
 					ender = false
 				} else { await Send_Message(user_check.idvk, `💡 Жмите только по кнопкам с иконками!`) }
@@ -193,7 +193,7 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
 		}
 		if (blank_build.length == 0) { await Send_Message(user_check.idvk, `😿 Очередь анкет закончилась, попробуйте вызвать !архив еще раз, иначе приходите позже.`)}
         await Logger(`(private chat) ~ finished check acrhive blank by <user> №${context.senderId}`)
-		await Keyboard_Index(context, `⌛ Архивариус, знание сила, мудрость идиллия! Выдаем кнопку вызова спутника...`)
+		await Keyboard_Index(context, `⌛ Архивариус, знание — сила, мудрость — идиллия! Выдаем кнопку вызова спутника...`)
     })
 	//почта
 	hearManager.hear(/📬 Почта|📪 Почта|!почта|!Почта/, async (context: any) => {
@@ -223,7 +223,7 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
 			if (!blank_to_check || !blank_from_check) { 
 				const mail_skip = await prisma.mail.update({ where: { id: selector.id }, data: { read: true, find: false } })
 				mail_build.splice(target, 1)
-				await Send_Message(user_check.idvk, `⚠ Недавно ваша анкета #${blank_to_check?.id} понравилась ролевику с анкетой #${blank_from_check?.id}, но ваша или опоннента анкета не были найдены, сообщение было помечено не найденным\n `)
+				await Send_Message(user_check.idvk, `⚠ Недавно ваша анкета #${blank_to_check?.id} понравилась ролевику с анкетой #${blank_from_check?.id}, но ваша или оппонента анкета не были найдены, сообщение было помечено не найденным\n `)
 				continue
 			}
 			const account_to = await prisma.account.findFirst({ where: { id: blank_to_check.id_account } })
@@ -231,7 +231,7 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
 			if (!account_to || !account_from) {
 				const mail_skip = await prisma.mail.update({ where: { id: selector.id }, data: { read: true, find: false } })
 				mail_build.splice(target, 1)
-				await Send_Message(user_check.idvk, `⚠ Недавно ваша анкета #${blank_to_check?.id} понравилась ролевику с анкетой #${blank_from_check?.id}, но ваc или опоннента больше нет в системе, сообщение было помечено не найденным\n `)
+				await Send_Message(user_check.idvk, `⚠ Недавно ваша анкета #${blank_to_check?.id} понравилась ролевику с анкетой #${blank_from_check?.id}, но ваc или оппонента больше нет в системе, сообщение было помечено не найденным\n `)
 				continue
 			}
 			let censored = user_check.censored ? await Censored_Activation_Pro(blank_from_check.text) : blank_from_check.text
@@ -240,11 +240,11 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
 			const keyboard = new KeyboardBuilder()
 			.textButton({ label: '👎', payload: { command: 'student' }, color: 'secondary' })
 			.textButton({ label: '👍', payload: { command: 'citizen' }, color: 'secondary' }).row()
-			.textButton({ label: '🚫Назад', payload: { command: 'citizen' }, color: 'secondary' })
+			.textButton({ label: '🚫Стоп', payload: { command: 'citizen' }, color: 'secondary' })
 			.oneTime().inline()
 			const corrected: any = blank_from_check.photo.includes('photo') ? await context.question( text, {keyboard, answerTimeLimit, attachment: blank_from_check.photo}) : await context.question( text, {keyboard, answerTimeLimit})
 			if (corrected.isTimeout) { await context.send(`⏰ Время ожидания разбора почты истекло!`); await Keyboard_Index(context, `⌛ Обновление клавиатуры...`); return }
-			if (corrected.text == '🚫Назад' || corrected.text == '!назад') {
+			if (corrected.text == '🚫Стоп' || corrected.text == '!стоп') {
 				await Send_Message(user_check.idvk, `✅ Успешная отмена просмотра почтового ящика анкет.`)
 				ender = false
 			}
@@ -266,7 +266,7 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
 		}
 		if (mail_build.length == 0) { await Send_Message(user_check.idvk, `😿 Письма кончились, приходите позже.`)}
         await Logger(`(private chat) ~ finished check self mail by <user> №${context.senderId}`)
-		await Keyboard_Index(context, `⌛ Кибер совиная почта на связи, выдаем кнопку вызова спутника...`)
+		await Keyboard_Index(context, `⌛ Киберсовиная почта на связи, выдаем кнопку вызова спутника...`)
     })
 	//для рандома
 	hearManager.hear(/🎲 Рандом|!рандом|!Рандом/, async (context: any) => {
@@ -317,16 +317,16 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
 			const corrected: any = blank_check.photo.includes('photo') ? await context.question( text, {keyboard, answerTimeLimit, attachment: blank_check.photo}) : await context.question( text, {keyboard, answerTimeLimit})
 			if (corrected.isTimeout) { await context.send(`⏰ Время ожидания случайного поиска анкеты истекло!`); await Keyboard_Index(context, `⌛ Обновление клавиатуры...`); return }
 			const config: any = {
-				'⛔ Налево': Blank_Unlike,
-				'✅ Направо': Blank_Like,
-				'✏ Направо': Blank_Like_Donate,
+				'⛔ Мимо': Blank_Unlike,
+				'✅ Отклик': Blank_Like,
+				'✏ Письмо': Blank_Like_Donate,
 				'⚠ Жалоба': Blank_Report,
 			}
 			if (corrected.text in config) {
 				const commandHandler = config[corrected.text];
 				const ans = await commandHandler(context, user_check, selector, blank_build, target)
 			} else {
-				if (corrected.text == '🚫 Назад' || corrected.text == '!назад') {
+				if (corrected.text == '🚫 Стоп' || corrected.text == '!стоп') {
 					await Send_Message(user_check.idvk, `✅ Успешная отмена рандомных анкет.`)
 					ender = false
 				} else { await Send_Message(user_check.idvk, `💡 Жмите только по кнопкам с иконками!`) }
@@ -390,16 +390,16 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
 			const corrected: any = blank_check.photo.includes('photo') ? await context.question( text, {keyboard, answerTimeLimit, attachment: blank_check.photo}) : await context.question( text, {keyboard, answerTimeLimit})
 			if (corrected.isTimeout) { await context.send(`⏰ Время ожидания поиска анкеты истекло!`); await Keyboard_Index(context, `⌛ Обновление клавиатуры...`); return }
 			const config: any = {
-				'⛔ Налево': Blank_Unlike,
-				'✅ Направо': Blank_Like,
-				'✏ Направо': Blank_Like_Donate,
+				'⛔ Мимо': Blank_Unlike,
+				'✅ Отклик': Blank_Like,
+				'✏ Письмо': Blank_Like_Donate,
 				'⚠ Жалоба': Blank_Report,
 			}
 			if (corrected.text in config) {
 				const commandHandler = config[corrected.text];
 				const ans = await commandHandler(context, user_check, selector, blank_build, 0)
 			} else {
-				if (corrected.text == '🚫 Назад' || corrected.text == '!назад') {
+				if (corrected.text == '🚫 Стоп' || corrected.text == '!стоп') {
 					await Send_Message(user_check.idvk, `✅ Успешная отмена поиска анкет.`)
 					ender = false
 				} else { await Send_Message(user_check.idvk, `💡 Жмите только по кнопкам с иконками!`) }
@@ -463,16 +463,16 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
 			const corrected: any = blank_check.photo.includes('photo') ? await context.question( text, {keyboard, answerTimeLimit, attachment: blank_check.photo}) : await context.question( text, {keyboard, answerTimeLimit})
 			if (corrected.isTimeout) { await context.send(`⏰ Время ожидания серфинга анкет истекло!`); await Keyboard_Index(context, `⌛ Обновление клавиатуры...`); return }
 			const config: any = {
-				'⛔ Налево': Blank_Unlike,
-				'✅ Направо': Blank_Like,
-				'✏ Направо': Blank_Like_Donate,
+				'⛔ Мимо': Blank_Unlike,
+				'✅ Отклик': Blank_Like,
+				'✏ Письмо': Blank_Like_Donate,
 				'⚠ Жалоба': Blank_Report,
 			}
 			if (corrected.text in config) {
 				const commandHandler = config[corrected.text];
 				const ans = await commandHandler(context, user_check, selector, blank_build, 0)
 			} else {
-				if (corrected.text == '🚫 Назад' || corrected.text == '!назад') {
+				if (corrected.text == '🚫 Стоп' || corrected.text == '!стоп') {
 					await Send_Message(user_check.idvk, `✅ Успешная отмена поиска анкет через браузер.`)
 					ender = false
 				} else { await Send_Message(user_check.idvk, `💡 Жмите только по кнопкам с иконками!`) }
@@ -480,7 +480,7 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
 		}
 		if (blank_build.length == 0) { await Send_Message(user_check.idvk, `😿 Очередь анкет закончилась, попробуйте вызвать !браузер еще раз, иначе приходите позже.`)}
         await Logger(`(private chat) ~ finished check browser blank by <user> №${context.senderId}`)
-		await Keyboard_Index(context, `⌛ Хватит искать и серфить? Нет не хватит, выдаем кнопку вызова спутника...`)
+		await Keyboard_Index(context, `⌛ Хватит искать и серфить? Нет, не хватит, выдаем кнопку вызова спутника...`)
     })
 	// для анкеты
 	hearManager.hear(/📃 Моя анкета|!анкета|!Анкета/, async (context: any) => {
@@ -559,7 +559,7 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
 			}
 		}
         await Logger(`(private chat) ~ finished self blank is viewed by <user> №${context.senderId}`)
-		await Keyboard_Index(context, `⌛ Анкета, это повод рассказть о себе или о других?`)
+		await Keyboard_Index(context, `⌛ Анкета — это повод рассказать о себе или о других?`)
     })
 	hearManager.hear(/⛔Удалить|!удалить/, async (context: any) => {
         if (context.peerType == 'chat') { return }
@@ -584,7 +584,7 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
 			await Send_Message(user_check.idvk, `✅ Успешно удалено:\n📜 Анкета: ${blank_delete.id}\n💬 Содержание:\n${blank_delete.text}`)
 			await Logger(`(private chat) ~ deleted self <blank> #${blank_delete.id} by <user> №${context.senderId}`)
 		}
-		await Keyboard_Index(context, `⌛ Удаление, мать учения, выдаем кнопку вызова спутника...`)
+		await Keyboard_Index(context, `⌛ Удаление — мать учения, выдаем кнопку вызова спутника...`)
     })
 	hearManager.hear(/✏Изменить|!изменить/, async (context: any) => {
         if (context.peerType == 'chat') { return }
@@ -655,7 +655,7 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
 			await Send_Message(user_check.idvk, `✅ Успешно изменено:\n📜 Анкета: ${blank_edit.id}\n💬 Содержание:\n${blank_edit.text}`)
 		}
         await Logger(`(private chat) ~ finished edit self <blank> #${blank_check.id} by <user> №${context.senderId}`)
-		await Keyboard_Index(context, `⌛ Изменение, отец учения, выдаем кнопку вызова спутника...`)
+		await Keyboard_Index(context, `⌛ Изменение — отец учения, выдаем кнопку вызова спутника...`)
     })
 	hearManager.hear(/⚙ Цензура|!цензура|!Цензура/, async (context: any) => {
         if (context.peerType == 'chat') { return }
@@ -690,7 +690,7 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
                 }
             }
         }
-		await Keyboard_Index(context, `⌛ Сегодня дали права - завтра отжали!`)
+		await Keyboard_Index(context, `⌛ Сегодня дали права — завтра отжали!`)
     })
 	hearManager.hear(/⚖ Модерация|!модерация|!Модерация/, async (context: any) => {
 		if (context.peerType == 'chat') { return }
@@ -717,11 +717,11 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
 			const keyboard = new KeyboardBuilder()
 			.textButton({ label: '⛔Отклонить', payload: { command: 'student' }, color: 'secondary' })
 			.textButton({ label: '✅Заверить', payload: { command: 'citizen' }, color: 'secondary' }).row()
-			.textButton({ label: '🚫Назад', payload: { command: 'citizen' }, color: 'secondary' })
+			.textButton({ label: '🚫Стоп', payload: { command: 'citizen' }, color: 'secondary' })
 			.oneTime().inline()
 			const corrected: any = selector.photo.includes('photo') ? await context.question( text, {keyboard, answerTimeLimit, attachment: selector.photo}) : await context.question( text, {keyboard, answerTimeLimit})
 			if (corrected.isTimeout) { await context.send(`⏰ Время ожидания судебной системы истекло!`); await Keyboard_Index(context, `⌛ Обновление клавиатуры...`); return }
-			if (corrected.text == '🚫Назад' || corrected.text == '!назад') {
+			if (corrected.text == '🚫Стоп' || corrected.text == '!стоп') {
 				await Send_Message(user_check.idvk, `✅ Успешная отмена просмотра заблокированных анкет.`)
 				ender = false
 			}
@@ -752,7 +752,7 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
 		}
 		if (blank_build.length == 0) { await Send_Message(user_check.idvk, `😿 Забаненные анкеты кончились, приходите позже.`)}
         await Logger(`(private chat) ~ finished check banned blanks by <admin> №${context.senderId}`)
-		await Keyboard_Index(context, `⌛ Система правосудия, это отстойно... Выдаем кнопку вызова спутника...`)
+		await Keyboard_Index(context, `⌛ Система правосудия — это отстойно... Выдаем кнопку вызова спутника...`)
     })
 	hearManager.hear(/!енотик/, async (context: any) => {
 		if (context.peerType == 'chat') { return }
@@ -767,7 +767,7 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
             message: `‼ @id${context.senderId}(Admin) делает бекап баз данных dev.db.`
         })
         await Logger(`In private chat, did backup database by admin ${context.senderId}`)
-		await Keyboard_Index(context, `⌛ Резервное копирование, как зарядка, сегодня делаешь - завтра нет!`)
+		await Keyboard_Index(context, `⌛ Резервное копирование, как зарядка: сегодня делаешь — завтра нет!`)
     })
 	hearManager.hear(/!бан|!Бан/, async (context) => {
 		if (context.peerType == 'chat') { return }
@@ -812,7 +812,7 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
 				await Logger(`(private chat) ~ not found <user> #${target} for donate status by <admin> №${context.senderId}`)
             }
         }
-		await Keyboard_Index(context, `⌛ Мы отвественны за тех, кто задонатил!`)
+		await Keyboard_Index(context, `⌛ Мы ответственны за тех, кто задонатил!`)
     })
 	hearManager.hear(/☠ Банхаммер|!чс|!Чс/, async (context) => {
 		if (context.peerType == 'chat') { return }
