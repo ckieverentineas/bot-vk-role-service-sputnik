@@ -523,7 +523,7 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
 					}
 				}
 			}
-			const corrected: any = await context.question(`🧷 Прикрепите фотографию`,
+			const corrected: any = await context.question(`🧷 Прикрепите не более 2 фотографий`,
 				{	
 					keyboard: Keyboard.builder()
 					.textButton({ label: 'Буду без картинки', payload: { command: 'student' }, color: 'secondary' })
@@ -638,7 +638,7 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
 				}
 			}
 		}
-		const corrected: any = await context.question(`🧷 Прикрепите фотографию`,
+		const corrected: any = await context.question(`🧷 Прикрепите не более 2 фотографий`,
 			{	
 				keyboard: Keyboard.builder()
 				.textButton({ label: 'Буду без картинки', payload: { command: 'student' }, color: 'secondary' })
