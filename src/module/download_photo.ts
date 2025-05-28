@@ -16,7 +16,7 @@ export async function Photo_Uploads(context: any) {
     const photoUrl = attachment.photo.sizes[attachment.photo.sizes.length - 1].url
     // Сохраняем фото для пользователя
     const userId = context.senderId;
-    console.log(attachmentStr)
+    //console.log(attachmentStr)
     await context.send('Фото сохранено!');
     try {
         await context.send({ attachment: attachmentStr });
@@ -67,16 +67,16 @@ export async function Photo_Upload_Pro(context: any): Promise<any> {
     const filePath = path.join(dialogDirectory, filename.split('?')[0]);
     // проверяем, есть ли такой файл
     if (fs.existsSync(filePath)) {
-      console.log(`AlreadyExists ${url}`);
+      await Logger(`AlreadyExists ${url}`);
     }
     // загружаем фотку в папку temp
     await new Promise<void>((resolve, reject) => {
       const file = fs.createWriteStream(filePath);
       https.get(url, (response) => {
         response.pipe(file);
-        response.on("end", () => {
+        response.on("end", async () => {
           file.close();
-          console.log(`Downloaded ${filename}`);
+          await Logger(`Downloaded ${filename}`);
           resolve();
         });
       }).on("error", (error) => {
@@ -115,7 +115,7 @@ async function uploadAndDeleteImage(filePath: any) {
         //console.log(`Uploaded image. Owner ID: ${owner_id}, Media ID: ${media_id}`);
         // Удаление файла после загрузки
         fs.unlinkSync(filePath);
-        console.log(`Deleted file: ${filePath}`);
+        await Logger(`Deleted file: ${filePath}`);
         const attachment = photo;
         //console.log(context.attachments[0])
         const photoId = attachment.id;
@@ -124,7 +124,7 @@ async function uploadAndDeleteImage(filePath: any) {
         const attachmentStr = `photo${ownerId}_${photoId}`;
         return attachmentStr
     } catch (error) {
-        console.error('Error uploading image or deleting file:', error);
+        await Logger(`Error uploading image or deleting file: ${error}`);
         return ''
     }
 }

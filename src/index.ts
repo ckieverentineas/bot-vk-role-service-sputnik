@@ -51,19 +51,19 @@ vk.updates.on('message_new', async (context: any, next: any) => {
 	//Модуль вызова пкметра
 	const pk_counter_st = await Counter_PK_Module(context)
 	//console.log(users_pk)
-	if (pk_counter_st) { return }
+	if (pk_counter_st) { return await next(); }
 	//если написали в чат, то пропускаем
 	const chat_ch = await Chat_Cleaner(context)
-	if (chat_ch) { return }
+	if (chat_ch) { return await next(); }
 	const date_page_check = await Data_Registration_Page_Detector(context)
-	if (!date_page_check) { return next(); }
+	if (!date_page_check) { return await next(); }
 	//проверяем есть ли пользователь в базах данных
 	const user_check = await prisma.account.findFirst({ where: { idvk: context.senderId } })
 	//если пользователя нет, то начинаем регистрацию
-	if (!user_check) { await User_Registration(context); return next(); }
+	if (!user_check) { await User_Registration(context); return await next();; }
 	await Online_Set(context)
 	await Keyboard_Index(context, `⌛ Загрузка, пожалуйста, подождите...`)
-	return next();
+	return await next();
 })
 
 vk.updates.on('message_event', async (context: any, next: any) => { 
@@ -78,8 +78,8 @@ vk.updates.on('message_event', async (context: any, next: any) => {
 	return await next();
 })
 //запускаем бота
-vk.updates.start().then(() => {
-	Logger(`(system) ~ running succes by <system> №0`)
+vk.updates.start().then(async () => {
+	await Logger(`(system) ~ running succes by <system> №0`)
 }).catch(console.error);
 //запускаем раз в сутки выдачу времени
 setInterval(Worker_Checker, 86400000);

@@ -78,7 +78,7 @@ export async function Send_Message(idvk: number, message: string, keyboard?: Key
         if (!attachment && keyboard) { await vk.api.messages.send({ peer_id: idvk, random_id: 0, message: `${message}`, keyboard: keyboard } ) }
         if (attachment && keyboard) { await vk.api.messages.send({ peer_id: idvk, random_id: 0, message: `${message}`, keyboard: keyboard, attachment: attachment } ) }
     } catch (e) {
-        console.log(`Ошибка отправки сообщения: ${e}`)
+        await Logger(`Ошибка отправки сообщения: ${e}`)
     }
 }
 export async function Edit_Message(context: any, message: string, keyboard?: Keyboard, attached?: PhotoAttachment | null) {
@@ -98,7 +98,7 @@ export async function Edit_Message(context: any, message: string, keyboard?: Key
         }
     } catch (e) {
         const err = `⚠ Ошибка редактирования сообщения, попробуйте через 1-15 минут, в зависимости от ошибки: ${e}`
-        console.log(`Ошибка редактирования сообщения, попробуйте через 1-15 минут, в зависимости от ошибки: ${e}`)
+        await Logger(`Ошибка редактирования сообщения, попробуйте через 1-15 минут, в зависимости от ошибки: ${e}`)
         try {
             await vk.api.messages.send({
                 peer_id: context.senderId ?? context.peerId,
@@ -106,7 +106,7 @@ export async function Edit_Message(context: any, message: string, keyboard?: Key
                 message: err.slice(0,250)
             })
         } catch {
-            console.log(`Ошибка редактирования сообщения в квадрате: ${e}`)
+            await Logger(`Ошибка редактирования сообщения в квадрате: ${e}`)
         }
         
     }
@@ -204,33 +204,16 @@ export async function Keyboard_Index(context: any, messa: any) {
     } 
     keyboard.textButton({ label: '!спутник', payload: { command: 'sliz' }, color: 'positive' }).row().oneTime()
     // Отправляем клавиатуру без сообщения
-    await vk.api.messages.send({ peer_id: context.senderId, random_id: 0, message: `${messa}\u00A0`, keyboard: keyboard })
-    .then(async (response: MessagesSendResponse) => { 
-        await Sleep(1000)
-        return vk.api.messages.delete({ message_ids: [response], delete_for_all: 1 }) })
-    .then(() => { Logger(`(private chat) ~ succes get keyboard is viewed by <user> №${context.senderId}`) })
-    .catch((error) => { console.error(`User ${context.senderId} fail get keyboard: ${error}`) });
-
-    // Получаем последнее сообщение из истории беседы
-  const [lastMessage] = (await vk.api.messages.getHistory({
-    peer_id: context.peerId,
-    count: 1,
-  })).items;
-
-  // Если последнее сообщение от пользователя и не содержит текст "!банк",
-  // помечаем беседу как "говорит"
-  if (lastMessage.from_id !== group_id && lastMessage.text !== '!спутник') {
-    await vk.api.messages.setActivity({
-      type: 'typing',
-      peer_id: context.peerId,
-    });
-  } else {
-    // Иначе отправляем событие, что бот прочитал сообщение
-    await vk.api.messages.markAsRead({
-      peer_id: context.peerId,
-    });
-  }
-
+    try {
+        await vk.api.messages.send({ peer_id: context.senderId, random_id: 0, message: `${messa}\u00A0`, keyboard: keyboard })
+        .then(async (response: MessagesSendResponse) => { 
+            await Sleep(1000)
+            return await vk.api.messages.delete({ message_ids: [response], delete_for_all: 1 }) })
+        .then(async () => { await Logger(`(private chat) ~ succes get keyboard is viewed by <user> №${context.senderId}`) })
+        .catch(async (error) => { await Logger(`User ${context.senderId} fail get keyboard: ${error}`) });
+    } catch (e) {
+        await Logger(`User ${context.senderId} fail get keyboard second: ${e}`)
+    }
 }
 
 export async function User_Info(context: any) {
@@ -321,7 +304,7 @@ export async function Blank_Inactivity() {
     const datenow: any = new Date()
     const timeouter = 2592000000 //месяц
     const timeouter_warn = 2592000000-86400000 //29 дней
-    Logger(`(system) ~ starting clear blanks inactivity by <system> №0`)
+    await Logger(`(system) ~ starting clear blanks inactivity by <system> №0`)
     for (const blank of await prisma.blank.findMany({})) {
         const online_check = await prisma.account.findFirst({ where: { id: blank.id_account } })
         if (!online_check) { continue }
@@ -339,7 +322,7 @@ export async function Blank_Inactivity() {
             await Send_Message(chat_id, `⚠ Анкета №${blank.id} изъята из поиска из-за неактивности клиента.`)
         }
     }
-    Logger(`(system) ~ complete clear blanks inactivity by <system> №0`)
+    await Logger(`(system) ~ complete clear blanks inactivity by <system> №0`)
 }
 
 /*export async function Parser_IDVK(mention: string): Promise<string | false> {

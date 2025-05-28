@@ -240,7 +240,8 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
 			const keyboard = new KeyboardBuilder()
 			.textButton({ label: '👎', payload: { command: 'student' }, color: 'secondary' })
 			.textButton({ label: '👍', payload: { command: 'citizen' }, color: 'secondary' }).row()
-			.textButton({ label: '🚫Стоп', payload: { command: 'citizen' }, color: 'secondary' })
+			.textButton({ label: '🚫Стоп', payload: { command: 'citizen' }, color: 'secondary' }).row()
+			.textButton({ label: '⚠ Жалоба', payload: { command: 'citizen' }, color: 'secondary' })
 			.oneTime().inline()
 			const corrected: any = blank_from_check.photo.includes('photo') ? await context.question( text, {keyboard, answerTimeLimit, attachment: blank_from_check.photo}) : await context.question( text, {keyboard, answerTimeLimit})
 			if (corrected.isTimeout) { await context.send(`⏰ Время ожидания разбора почты истекло!`); await Keyboard_Index(context, `⌛ Обновление клавиатуры...`); return }
@@ -262,6 +263,9 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
         		await Logger(`(private chat) ~ clicked like for <blank> #${blank_to_check.id} by <user> №${context.senderId}`)
 				const ans_selector = `🌐 Анкеты №${blank_from_check.id} + №${blank_to_check.id} = [ролевики никогда]!`
     			await Send_Message(chat_id, ans_selector)
+			}
+			if (corrected.text == '⚠ Жалоба') {
+				await Blank_Report(context, account_to, blank_from_check, mail_build, target)
 			}
 		}
 		if (mail_build.length == 0) { await Send_Message(user_check.idvk, `😿 Письма кончились, приходите позже.`)}

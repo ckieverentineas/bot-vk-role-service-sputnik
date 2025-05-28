@@ -38,10 +38,7 @@ export async function collectUniqueWordsAndFrequency() {
     // Записываем в текстовый файл
     const output = sortedWordFrequency.map(([word, freq]) => `${word}: ${freq}`).join('\n');
     fs.writeFileSync('word_frequency.txt', output, 'utf8');
-
     console.log('Частота слов записана в word_frequency.txt');
-
-    await prisma.$disconnect();
 }
 
 /* Запускаем функцию

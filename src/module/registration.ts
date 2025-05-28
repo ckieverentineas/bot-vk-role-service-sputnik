@@ -15,8 +15,7 @@ export async function User_Registration(context: any) {
     );
     if (answer.isTimeout) { return await context.send(`⏰ Время ожидания подтверждения согласия истекло!`) }
     if (!/да|yes|Согласиться|конечно|✏/i.test(answer.text|| '{}')) {
-        await context.send('⌛ Вы отказались дать свое согласие. Если что, заглядывайте на чай');
-        return;
+        return await context.send('⌛ Вы отказались дать свое согласие. Если что, заглядывайте на чай');
     }
     //приветствие игрока
     const visit: any = await context.question(`⌛ Поставив свою подпись, вы увидели Хранителя Спутника, который что-то писал на листке пергамента.`,

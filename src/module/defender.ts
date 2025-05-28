@@ -1,4 +1,5 @@
 import got = require("got")
+import { Logger } from "./helper";
 
 export async function Data_Registration_Page_Detector(context: any) {
     try {
@@ -16,7 +17,7 @@ export async function Data_Registration_Page_Detector(context: any) {
             }
         }
     } catch (error: any) {
-        console.error(error.response.statusCode);
+        await Logger(error.response.statusCode);
     }
     return true
 }
