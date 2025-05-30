@@ -7,7 +7,7 @@ import prisma from "./module/prisma";
 import { Accessed, checkGroupSubscriber, Confirm_User_Success, Group_Id_Get, Input_Number, Keyboard_Index, Logger, Match, Online_Set, Parser_IDVK, Researcher_Better_Blank, Researcher_Better_Blank_Target_Old, Send_Message, User_Banned, User_Info } from "./module/helper";
 import { abusivelist, Censored_Activation, Censored_Activation_Pro } from "./module/blacklist";
 import { Account, Blank, Mail } from "@prisma/client";
-import { Blank_Browser, Blank_Cleaner, Blank_Like, Blank_Like_Donate, Blank_Report, Blank_Unlike } from "./module/blank_swap";
+import { Blank_Browser, Blank_Cleaner, Blank_Like, Blank_Like_Donate, Blank_Report, Blank_Report_Admin, Blank_Unlike } from "./module/blank_swap";
 import { Keyboard_Swap } from "./module/keyboard";
 import { BlackList_Printer } from "./module/blacklist_user";
 import { Researcher_Better_Blank_Target } from "./module/reseacher/resheacher_up";
@@ -111,6 +111,7 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
 				'✅ Отклик': Blank_Like,
 				'✏ Письмо': Blank_Like_Donate,
 				'⚠ Жалоба': Blank_Report,
+				'🔪 Резать мразей как шаверму': Blank_Report_Admin
 			}
 			if (corrected.text in config) {
 				const commandHandler = config[corrected.text];
@@ -180,6 +181,7 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
 				'✅ Отклик': Blank_Like,
 				'✏ Письмо': Blank_Like_Donate,
 				'⚠ Жалоба': Blank_Report,
+				'🔪 Резать мразей как шаверму': Blank_Report_Admin
 			}
 			if (corrected.text in config) {
 				const commandHandler = config[corrected.text];
@@ -241,8 +243,12 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
 			.textButton({ label: '👎', payload: { command: 'student' }, color: 'secondary' })
 			.textButton({ label: '👍', payload: { command: 'citizen' }, color: 'secondary' }).row()
 			.textButton({ label: '🚫Стоп', payload: { command: 'citizen' }, color: 'secondary' }).row()
-			.textButton({ label: '⚠ Жалоба', payload: { command: 'citizen' }, color: 'secondary' })
-			.oneTime().inline()
+			if (account_to.id_role != 1) {
+				keyboard.textButton({ label: '🔪 Резать мразей как шаверму', color: 'secondary' }).row()
+			} else {
+				keyboard.textButton({ label: '⚠ Жалоба', color: 'secondary' }).row()
+			}
+			keyboard.oneTime().inline()
 			const corrected: any = blank_from_check.photo.includes('photo') ? await context.question( text, {keyboard, answerTimeLimit, attachment: blank_from_check.photo}) : await context.question( text, {keyboard, answerTimeLimit})
 			if (corrected.isTimeout) { await context.send(`⏰ Время ожидания разбора почты истекло!`); await Keyboard_Index(context, `⌛ Обновление клавиатуры...`); return }
 			if (corrected.text == '🚫Стоп' || corrected.text == '!стоп') {
@@ -266,6 +272,9 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
 			}
 			if (corrected.text == '⚠ Жалоба') {
 				await Blank_Report(context, account_to, blank_from_check, mail_build, target)
+			}
+			if (corrected.text == '🔪 Резать мразей как шаверму') {
+				await Blank_Report_Admin(context, account_to, blank_from_check, mail_build, target)
 			}
 		}
 		if (mail_build.length == 0) { await Send_Message(user_check.idvk, `😿 Письма кончились, приходите позже.`)}
@@ -325,6 +334,7 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
 				'✅ Отклик': Blank_Like,
 				'✏ Письмо': Blank_Like_Donate,
 				'⚠ Жалоба': Blank_Report,
+				'🔪 Резать мразей как шаверму': Blank_Report_Admin
 			}
 			if (corrected.text in config) {
 				const commandHandler = config[corrected.text];
@@ -398,6 +408,7 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
 				'✅ Отклик': Blank_Like,
 				'✏ Письмо': Blank_Like_Donate,
 				'⚠ Жалоба': Blank_Report,
+				'🔪 Резать мразей как шаверму': Blank_Report_Admin
 			}
 			if (corrected.text in config) {
 				const commandHandler = config[corrected.text];
@@ -471,6 +482,7 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
 				'✅ Отклик': Blank_Like,
 				'✏ Письмо': Blank_Like_Donate,
 				'⚠ Жалоба': Blank_Report,
+				'🔪 Резать мразей как шаверму': Blank_Report_Admin
 			}
 			if (corrected.text in config) {
 				const commandHandler = config[corrected.text];
@@ -502,7 +514,7 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
 			await Logger(`(private chat) ~ starting creation self blank by <user> №${context.senderId}`)
 			while (ender) {
 				let censored = user_check.censored ? await Censored_Activation_Pro(text_input) : text_input
-				const corrected: any = await context.question(`🧷 У вас еще нет анкеты, введите анкету от 30 до 4000 символов, английские символы запрещены: \n 💡Вы можете указать: пол, возраст, минимальный порог строк, желаемые жанры или же сюжет... другие нюансы.\n📝 Сейчас заполнено:\n${censored}\n\n${status_check}`,
+				const corrected: any = await context.question(`🧷 У вас еще нет анкеты, введите анкету от 30 до 3500 символов, английские символы запрещены: \n 💡Вы можете указать: пол, возраст, минимальный порог строк, желаемые жанры или же сюжет... другие нюансы.\n📝 Сейчас заполнено:\n${censored}\n\n${status_check}`,
 					{	
 						keyboard: Keyboard.builder()
 						.textButton({ label: '!сохранить', payload: { command: 'student' }, color: 'secondary' })
@@ -523,6 +535,7 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
 						return 
 					} else {
 						text_input = await Blank_Cleaner(corrected.text)
+						text_input = text_input.length < 3600 ? text_input : text_input.slice(0,3600)
 						status_check = `⚠ В анкете зарегистрировано ${text_input?.length} из ${corrected.text?.length} введенных вами символов, убедитесь в корректном отображении анкеты!`
 					}
 				}
@@ -638,6 +651,7 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
 					return 
 				} else {
 					text_input = await Blank_Cleaner(corrected.text)
+					text_input = text_input.length < 3600 ? text_input : text_input.slice(0,3600)
 					status_check = `⚠ В анкете зарегистрировано ${text_input?.length} из ${corrected.text?.length} введенных вами символов, убедитесь в корректном отображении анкеты!`
 				}
 			}
