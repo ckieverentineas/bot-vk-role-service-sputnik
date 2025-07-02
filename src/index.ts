@@ -10,6 +10,7 @@ import { User_Registration } from './module/registration';
 import { Data_Registration_Page_Detector } from './module/defender';
 import { Counter_PK_Module } from './module/counter_pk';
 import { collectUniqueWordsAndFrequency } from './module/reseacher/dumper';
+import { Start_Worker_API_Bot } from './api';
 dotenv.config()
 
 //загрузка из .env, задание параметров
@@ -80,6 +81,7 @@ vk.updates.on('message_event', async (context: any, next: any) => {
 //запускаем бота
 vk.updates.start().then(async () => {
 	await Logger(`(system) ~ running succes by <system> №0`)
+	await Start_Worker_API_Bot()
 }).catch(console.error);
 //запускаем раз в сутки выдачу времени
 setInterval(Worker_Checker, 86400000);
