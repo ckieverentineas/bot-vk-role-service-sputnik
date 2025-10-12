@@ -10,7 +10,7 @@ datasource db {
 
 model Account {
   id       Int      @id @default(autoincrement())
-  idvk     Int
+  idvk     Int      @unique
   id_role  Int      @default(1)
   censored Boolean  @default(true)
   banned   Boolean  @default(false)
@@ -21,7 +21,9 @@ model Account {
   Vision   Vision[]
   Report   Report[]
   BlackList BlackList[]
+  PkMeterSettings PkMeterSettings?
 }
+
 model BlackList {
   id       Int      @id @default(autoincrement())
   idvk     Int
@@ -66,4 +68,33 @@ model Report {
   id_account Int
   account    Account @relation(fields: [id_account], references: [id], onDelete: Cascade)
   status     String  @default("wait")
+}
+
+model PkMeterSettings {
+  id         Int     @id @default(autoincrement())
+  id_account Int     @unique
+  account    Account @relation(fields: [id_account], references: [id], onDelete: Cascade)
+  
+  // Настройки для одного ролевика
+  single_chars         Boolean @default(true)
+  single_chars_no_spaces Boolean @default(true)
+  single_words         Boolean @default(true)
+  single_pk           Boolean @default(true)
+  single_mb           Boolean @default(true)
+  single_sentences    Boolean @default(true)
+  single_post_percent Boolean @default(true)
+  single_comment_percent Boolean @default(true)
+  single_discussion_percent Boolean @default(true)
+  
+  // Настройки для нескольких ролевиков
+  multi_chars         Boolean @default(true)
+  multi_chars_no_spaces Boolean @default(true)
+  multi_words         Boolean @default(true)
+  multi_pk           Boolean @default(true)
+  multi_mb           Boolean @default(true)
+  multi_sentences    Boolean @default(true)
+  multi_message_count Boolean @default(true)
+  multi_sentence_count Boolean @default(true)
+  
+  crdate DateTime @default(now())
 }
