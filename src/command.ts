@@ -837,4 +837,37 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
         await BlackList_Printer(context)
 		await Keyboard_Index(context, `⌛ Туда их всех, не так ли?!`)
     })
+
+	hearManager.hear(/!орбита|!Орбита/, async (context: any) => {
+        if (context.peerType == 'chat') { return }
+		group_id_now =  group_id_now ? group_id_now : Number(await Group_Id_Get(token))
+        const user_check = await prisma.account.findFirst({ where: { idvk: context.senderId } })
+        if (!user_check) { return }
+		await Online_Set(context)
+		const user_inf = await User_Info(context)
+		const blank_check = await prisma.blank.findFirst({ where: { id_account: user_check?.id } })
+		const mail_check = await prisma.mail.findFirst({ where: {  blank_to: blank_check?.id ?? 0, read: false, find: true } })
+		
+        const keyboard = new KeyboardBuilder()
+    	.textButton({ label: '📃 Моя ролевая', payload: { command: 'card_enter' }, color: 'secondary' }).row()
+		.textButton({ label: `🌐 Искать ролевиков`, payload: { command: 'card_enter' }, color: 'secondary' }).row()
+		/*.textButton({ label: '⚙ Цензура', payload: { command: 'shop_category_enter' }, color: 'negative' })
+		keyboard.textButton({ label: '☠ Банхаммер', payload: { command: 'admin_enter' }, color: 'primary' }).row()
+		if (await checkGroupSubscriber(context.senderId, group_id_now)) {
+			keyboard
+			.textButton({ label: '🌐 Браузер', payload: { command: 'shop_category_enter' }, color: 'negative' })
+			.textButton({ label: '🔍 Поиск', payload: { command: 'inventory_enter' }, color: 'primary' }).row()
+		}
+    	keyboard
+		.textButton({ label: '🎲 Рандом', payload: { command: 'shop_category_enter' }, color: 'positive' })
+		.textButton({ label: '📐 Пкметр', payload: { command: 'shop_category_enter' }, color: 'positive' }).row()
+		if (user_check.donate || await Accessed(context) != `user`) { keyboard.textButton({ label: '🔧 Плагины', payload: { command: 'shop_category_enter' }, color: 'secondary' }) }
+		
+		*/
+    	//keyboard.urlButton({ label: '⚡ Инструкция', url: `https://vk.com/@bank_mm-instrukciya-po-polzovaniu-botom-centrobanka-magomira` }).row()
+		
+    	keyboard.callbackButton({ label: '🚫', payload: { command: 'exit' }, color: 'secondary' }).oneTime().inline()
+		await Send_Message(user_check.idvk, `🛰 Вы в системе поиска ролевиков в ролевую, ${user_inf.first_name}, что изволите?`, keyboard)
+        await Logger(`(private chat) ~ enter in main menu system is viewed by <user> №${context.senderId}`)
+    })
 }
