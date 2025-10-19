@@ -1,5 +1,5 @@
 import { Account, Blank } from "@prisma/client"
-import { Confirm_User_Success, Logger, Send_Message } from "./helper"
+import { Accessed, Confirm_User_Success, Logger, Send_Message } from "./helper"
 import prisma from "./prisma"
 import { abusivelist, Censored_Activation, Censored_Activation_Pro } from "./blacklist"
 import { Keyboard } from "vk-io"
@@ -69,53 +69,73 @@ export async function Blank_Unlike(context: any, user_check: Account, selector: 
 	await Logger(`(private chat) ~ clicked unswipe for <blank> #${selector.id} by <user> №${context.senderId}`)
 }
 export async function Blank_Report(context: any, user_check: Account, selector: Blank, blank_build: any, target: number) {
+    // Проверяем, является ли пользователь администратором
+    const isAdmin = await Accessed(context) != 'user';
+    
+    // Если не админ, проверяем, не подавал ли уже жалобу на эту анкету
+    if (!isAdmin) {
+        const existingReport = await prisma.report.findFirst({ 
+            where: { 
+                id_blank: selector.id, 
+                id_account: user_check.id,
+                status: 'wait' // проверяем только ожидающие рассмотрения жалобы
+            } 
+        });
+        
+        if (existingReport) {
+            await Send_Message(user_check.idvk, `⚠ Вы уже подавали жалобу на анкету #${selector.id}. Дождитесь её рассмотрения модераторами.`)
+            return;
+        }
+    }
+    
     const confirm: { status: boolean, text: String } = await Confirm_User_Success(context, `вы уверены, что хотите пожаловаться на анкету №${selector.id}?`)
     await context.send(`${confirm.text}`)
     if (!confirm.status) { return; }
-	let ender2 = true
-	let text_input = ``
-	await Logger(`(private chat) ~ starting report writing on <blank> #${selector.id} by <user> №${context.senderId}`)
-	while (ender2) {
-		let censored = user_check.censored ? await Censored_Activation_Pro(text_input) : text_input
-		const corrected: any = await context.question(`🧷 Введите причину жалобы от 10 до 200 символов:\n📝 Указана причина: ${censored}`,
-			{	
-				keyboard: Keyboard.builder()
-				.textButton({ label: '!сохранить', payload: { command: 'student' }, color: 'secondary' })
-				.textButton({ label: '!отмена', payload: { command: 'citizen' }, color: 'secondary' })
-				.oneTime().inline(),
-				answerTimeLimit
-			}
-		)
-		if (corrected.isTimeout) { return await context.send(`⏰ Время ожидания ввода жалобы истекло!`) }
-		if (corrected.text == '!сохранить') {
-			if (text_input.length < 10) { await context.send(`⚠ Жалобу от 10 символов надо!`); continue }
-			if (text_input.length > 200) { await context.send(`⚠ Жалобу до 200 символов надо!`); continue }
-			const report_set = await prisma.report.create({ data: { id_blank: selector.id, id_account: user_check.id, text: text_input }})
-			await Logger(`(private chat) ~ report send about <blank> #${selector.id} by <user> №${context.senderId}`)
-			await Send_Message(user_check.idvk, `✅ Мы зарегистрировали вашу жалобу на анкету #${selector.id}, спасибо за донос!`)
-			const user_warn = await prisma.account.findFirst({ where: { id: selector.id_account } })
-			const counter_warn = await prisma.report.count({ where: { id_blank: selector.id, status: 'wait' } })
-			if (!user_warn) { return }
-			await Send_Message(user_warn.idvk, `✅ На вашу анкету #${selector.id} кто-то донес до модератора следующее: [${report_set.text}]!\n⚠ Жалоб: ${counter_warn}/3.\n💡 Не беспокойтесь, если это ложное обвинение, то после третьей жалобы модератор разблокирует вас.`)
-			await Send_Message(chat_id, `🧨 На анкету #${selector.id} кто-то донес до модератора следующее: [${report_set.text}]!\n⚠ Жалоб: ${counter_warn}/3.`)
-			if (counter_warn >= 3) {
-				await prisma.blank.update({ where: { id: selector.id }, data: { banned: true } })
-				await Send_Message(user_warn.idvk, `🚫 На вашу анкету #${selector.id} донесли крысы ${counter_warn}/3. Изымаем анкету из поиска до разбирательства модераторами.`)
-				await Send_Message(chat_id, `⚠ Анкета №${selector.id} изъята из поиска из-за жалоб, модераторы, примите меры!`)
-			}
-			const blank_check = await prisma.vision.findFirst({ where: { id_account: user_check.id, id_blank: selector.id }})
-			if (!blank_check) { const blank_skip = await prisma.vision.create({ data: { id_account: user_check.id, id_blank: selector.id } }) }
-			blank_build.splice(target, 1)
-			ender2 = false
-		} else {
-			if (corrected.text == '!отмена') {
-				await context.send(`🔧 Вы отменили написание жалобы на анкету`)
-				ender2 = false
-			} else {
-				text_input = await Blank_Cleaner(corrected.text)
-			}
-		}
-	}
+    
+    let ender2 = true
+    let text_input = ``
+    await Logger(`(private chat) ~ starting report writing on <blank> #${selector.id} by <user> №${context.senderId}`)
+    while (ender2) {
+        let censored = user_check.censored ? await Censored_Activation_Pro(text_input) : text_input
+        const corrected: any = await context.question(`🧷 Введите причину жалобы от 10 до 200 символов:\n📝 Указана причина: ${censored}`,
+            {	
+                keyboard: Keyboard.builder()
+                .textButton({ label: '!сохранить', payload: { command: 'student' }, color: 'secondary' })
+                .textButton({ label: '!отмена', payload: { command: 'citizen' }, color: 'secondary' })
+                .oneTime().inline(),
+                answerTimeLimit
+            }
+        )
+        if (corrected.isTimeout) { return await context.send(`⏰ Время ожидания ввода жалобы истекло!`) }
+        if (corrected.text == '!сохранить') {
+            if (text_input.length < 10) { await context.send(`⚠ Жалобу от 10 символов надо!`); continue }
+            if (text_input.length > 200) { await context.send(`⚠ Жалобу до 200 символов надо!`); continue }
+            const report_set = await prisma.report.create({ data: { id_blank: selector.id, id_account: user_check.id, text: text_input }})
+            await Logger(`(private chat) ~ report send about <blank> #${selector.id} by <user> №${context.senderId}`)
+            await Send_Message(user_check.idvk, `✅ Мы зарегистрировали вашу жалобу на анкету #${selector.id}, спасибо за донос!`)
+            const user_warn = await prisma.account.findFirst({ where: { id: selector.id_account } })
+            const counter_warn = await prisma.report.count({ where: { id_blank: selector.id, status: 'wait' } })
+            if (!user_warn) { return }
+            await Send_Message(user_warn.idvk, `✅ На вашу анкету #${selector.id} кто-то донес до модератора следующее: [${report_set.text}]!\n⚠ Жалоб: ${counter_warn}/3.\n💡 Не беспокойтесь, если это ложное обвинение, то после третьей жалобы модератор разблокирует вас.`)
+            await Send_Message(chat_id, `🧨 На анкету #${selector.id} кто-то донес до модератора следующее: [${report_set.text}]!\n⚠ Жалоб: ${counter_warn}/3.`)
+            if (counter_warn >= 3) {
+                await prisma.blank.update({ where: { id: selector.id }, data: { banned: true } })
+                await Send_Message(user_warn.idvk, `🚫 На вашу анкету #${selector.id} донесли крысы ${counter_warn}/3. Изымаем анкету из поиска до разбирательства модераторами.`)
+                await Send_Message(chat_id, `⚠ Анкета №${selector.id} изъята из поиска из-за жалоб, модераторы, примите меры!`)
+            }
+            const blank_check = await prisma.vision.findFirst({ where: { id_account: user_check.id, id_blank: selector.id }})
+            if (!blank_check) { const blank_skip = await prisma.vision.create({ data: { id_account: user_check.id, id_blank: selector.id } }) }
+            blank_build.splice(target, 1)
+            ender2 = false
+        } else {
+            if (corrected.text == '!отмена') {
+                await context.send(`🔧 Вы отменили написание жалобы на анкету`)
+                ender2 = false
+            } else {
+                text_input = await Blank_Cleaner(corrected.text)
+            }
+        }
+    }
 }
 export async function Blank_Report_Admin(context: any, user_check: Account, selector: Blank, blank_build: any, target: number) {
     const confirm: { status: boolean, text: String } = await Confirm_User_Success(context, `вы уверены, что хотите пожаловаться на анкету №${selector.id}?`)
