@@ -22,6 +22,7 @@ model Account {
   Report   Report[]
   BlackList BlackList[]
   PkMeterSettings PkMeterSettings?
+  SniperUsage SniperUsage[] // ← ДОБАВЬТЕ ЭТУ СТРОЧКУ
 }
 
 model BlackList {
@@ -97,4 +98,15 @@ model PkMeterSettings {
   multi_sentence_count Boolean @default(true)
   
   crdate DateTime @default(now())
+}
+
+model SniperUsage {
+  id_account   Int
+  usage_date   DateTime
+  used         Boolean  @default(false)
+  
+  account      Account  @relation(fields: [id_account], references: [id], onDelete: Cascade)
+  
+  @@id([id_account, usage_date])
+  @@map("SniperUsage")
 }

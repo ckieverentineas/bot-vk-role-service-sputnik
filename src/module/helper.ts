@@ -427,6 +427,28 @@ export async function Input_Number(context: any, prompt: string, float: boolean,
     return input
 }
 
+export async function Reset_Sniper_Limits() {
+    try {
+        const now = new Date();
+        const mskTime = new Date(now.toLocaleString("en-US", { timeZone: "Europe/Moscow" }));
+        
+        // Сбрасываем лимиты в 00:00 по МСК
+        if (mskTime.getHours() === 0 && mskTime.getMinutes() === 0) {
+            await Logger(`(system) ~ resetting sniper limits by <system> №0`)
+            
+            // Удаляем все записи об использовании снайпера
+            const result = await prisma.sniperUsage.deleteMany({});
+            
+            await Logger(`(system) ~ deleted ${result.count} sniper usage records by <system> №0`)
+            
+            // Ждем 1 минуту чтобы не сбрасывать несколько раз за одну минуту
+            await Sleep(60000);
+        }
+    } catch (error) {
+        await Logger(`(system) ~ error resetting sniper limits: ${error}`)
+    }
+}
+
 export const checkGroupSubscriber = async (userId: any, groupId: any) => {
     return await vk.api.groups.isMember({ group_id: groupId, user_id: userId }) === 1;
 };
