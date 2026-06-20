@@ -17,6 +17,12 @@ model Account {
   donate   Boolean  @default(false)
   crdate   DateTime @default(now())
   online   DateTime @default(now())
+  age_verified       Boolean  @default(false)
+  romance_preference String   @default("[]")
+  tag_like           String?  @default("[]")
+  tag_unlike         String?  @default("[]")
+  tag_display_mode   String   @default("smart")
+  tag_position       String   @default("bottom")
   Blank    Blank[]
   Vision   Vision[]
   Report   Report[]
@@ -40,6 +46,7 @@ model Blank {
   account    Account  @relation(fields: [id_account], references: [id], onDelete: Cascade)
   banned     Boolean  @default(false)
   crdate     DateTime @default(now())
+  tag        String?  @default("[]")
   Vision     Vision[]
   Report     Report[]
 }

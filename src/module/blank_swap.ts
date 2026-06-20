@@ -231,3 +231,19 @@ export async function Blank_Cleaner(text: string) {
 		return ' '
 	}
 }
+
+export async function checkBlankHasTags(blankId: number): Promise<boolean> {
+    const blank = await prisma.blank.findFirst({
+        where: { id: blankId }
+    });
+    
+    if (!blank) return false;
+    if (!blank.tag) return false;
+    
+    try {
+        const tags = JSON.parse(blank.tag);
+        return tags.length >= 3;
+    } catch {
+        return false;
+    }
+}

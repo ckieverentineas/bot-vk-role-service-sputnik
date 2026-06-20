@@ -2,11 +2,11 @@ import { Attachment, Keyboard, KeyboardBuilder, PhotoAttachment, VK } from "vk-i
 import { answerTimeLimit, chat_id, group_id, root, starting_date, timer_text, vk } from "..";
 import { Account, Blank } from "@prisma/client";
 import prisma from "./prisma";
-import { MessagesSendResponse } from "vk-io/lib/api/schemas/responses";
 import { compareTwoStrings } from "string-similarity";
 import { DamerauLevenshteinDistance, DiceCoefficient, JaroWinklerDistance, LevenshteinDistance } from "natural";
 import * as fs from 'fs/promises';
 import { ico_list } from "./icon_list";
+import { tag_list } from "./datacenter/tag";
 
 export function Sleep(ms: number) {
     return new Promise((resolve) => {
@@ -206,7 +206,7 @@ export async function Keyboard_Index(context: any, messa: any) {
     // Отправляем клавиатуру без сообщения
     try {
         await vk.api.messages.send({ peer_id: context.senderId, random_id: 0, message: `${messa}\u00A0`, keyboard: keyboard })
-        .then(async (response: MessagesSendResponse) => { 
+        .then(async (response: any) => { 
             await Sleep(1000)
             return await vk.api.messages.delete({ message_ids: [response], delete_for_all: 1 }) })
         .then(async () => { await Logger(`(private chat) ~ succes get keyboard is viewed by <user> №${context.senderId}`) })
@@ -452,3 +452,109 @@ export async function Reset_Sniper_Limits() {
 export const checkGroupSubscriber = async (userId: any, groupId: any) => {
     return await vk.api.groups.isMember({ group_id: groupId, user_id: userId }) === 1;
 };
+
+export async function isAgeVerified(userId: number): Promise<boolean> {
+    const user = await prisma.account.findFirst({
+        where: { idvk: userId }
+    });
+    if (!user) return false;
+    return user.age_verified || false;
+}
+
+export async function getTagsForBlank(blankId: number): Promise<string> {
+    const blank = await prisma.blank.findFirst({
+        where: { id: blankId }
+    });
+    
+    if (!blank || !blank.tag) return '';
+    
+    try {
+        const tagIds = JSON.parse(blank.tag);
+        if (!Array.isArray(tagIds) || tagIds.length === 0) return '';
+        
+        const { tag_categories } = require('./datacenter/tag_categories');
+        
+        // Создаем порядок тегов на основе категорий
+        const categoryOrder: number[] = [];
+        for (const category of tag_categories) {
+            for (const tagId of category.tags) {
+                if (!categoryOrder.includes(tagId)) {
+                    categoryOrder.push(tagId);
+                }
+            }
+        }
+
+        // Находим позицию #романтика (17)
+        const romanceIndex = categoryOrder.indexOf(17);
+        if (romanceIndex !== -1) {
+            // Вставляем подвиды романтики после #романтика
+            const subtypes = [40, 41, 42]; // #гет, #яой, #юри
+            // Удаляем их из категорий, если они там есть
+            for (const subtype of subtypes) {
+                const idx = categoryOrder.indexOf(subtype);
+                if (idx !== -1) {
+                    categoryOrder.splice(idx, 1);
+                }
+                // Вставляем после #романтика
+                categoryOrder.splice(romanceIndex + 1, 0, subtype);
+            }
+        }
+        
+        // Сортируем ID тегов по порядку в категориях
+        const sortedTagIds = tagIds.sort((a: number, b: number) => {
+            const indexA = categoryOrder.indexOf(a);
+            const indexB = categoryOrder.indexOf(b);
+            // Если тег не найден в категориях, отправляем в конец
+            if (indexA === -1) return 1;
+            if (indexB === -1) return -1;
+            return indexA - indexB;
+        });
+        
+        const tagNames: string[] = [];
+        for (const id of sortedTagIds) {
+            const tag = tag_list.find(t => t.id === id);
+            if (tag) tagNames.push(tag.text);
+        }
+        return tagNames.join(' ');
+    } catch {
+        return '';
+    }
+}
+
+export async function getTagDisplaySettings(userId: number): Promise<{ mode: string; position: string }> {
+    const user = await prisma.account.findFirst({
+        where: { idvk: userId }
+    });
+    
+    return {
+        mode: user?.tag_display_mode || 'smart',
+        position: user?.tag_position || 'bottom'
+    };
+}
+
+export async function formatBlankWithTags(
+    userId: number,
+    blankId: number,
+    baseText: string
+): Promise<{ text: string; showTagsButton: boolean; tagsText: string }> {
+    const settings = await getTagDisplaySettings(userId);
+    const tags = await getTagsForBlank(blankId);
+    
+    const showTagsButton = settings.mode === 'hidden' || (settings.mode === 'smart' && (baseText.length + tags.length > 4000));
+    
+    let text = baseText;
+    if (!(settings.mode === 'hidden' || showTagsButton) && tags.length > 0) {
+        const tagBlock = `\n🏷 Теги: ${tags}`;
+        if (settings.position === 'top') {
+            text = tagBlock + '\n' + baseText;
+        } else {
+            text = baseText + tagBlock;
+        }
+    }
+    
+    return {
+        text: text,
+        showTagsButton: showTagsButton && tags.length > 0,
+        tagsText: tags
+    };
+}
