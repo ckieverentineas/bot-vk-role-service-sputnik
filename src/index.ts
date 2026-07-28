@@ -2,7 +2,7 @@ import { VK } from 'vk-io';
 import { HearManager } from '@vk-io/hear';
 import { QuestionManager, IQuestionMessageContext } from 'vk-io-question';
 import * as dotenv from 'dotenv'
-import { Blank_Inactivity, Chat_Cleaner, Exiter, Group_Id_Get, Keyboard_Index, Logger, Online_Set, Reset_Sniper_Limits, Worker_Checker } from './module/helper';
+import { Blank_Inactivity, Exiter, Group_Id_Get, Is_Chat_Checker, Keyboard_Index, Logger, Online_Set, Reset_Sniper_Limits, Worker_Checker } from './module/helper';
 import { InitGameRoutes } from './init';
 import { commandUserRoutes, handleAgeConfirmForLike, handleAgeConfirmForUnlike, handleAgeConfirmFromSave, handleBlankTagsConfig, handleRomanceDoneFromLike, handleRomanceDoneFromSave, handleRomanceDoneFromUnlike, handleRomanceToggleBothFromLike, handleRomanceToggleBothFromSave, handleRomanceToggleBothFromUnlike, handleRomanceToggleFemaleFromLike, handleRomanceToggleFemaleFromSave, handleRomanceToggleFemaleFromUnlike, handleRomanceToggleMaleFromLike, handleRomanceToggleMaleFromSave, handleRomanceToggleMaleFromUnlike, handleSaveTags, handleSetupRomanceFromSave, handleShowBlank, handleShowTags, handleTagatorMenu, handleTagatorResearchConfigLike, handleTagatorResearchConfigReset, handleTagatorResearchConfigUnlike, handleTagDisplayMode, handleTagDisplayPosition, handleTagDisplaySettings, handleTagPage } from './command';
 import prisma from './module/prisma';
@@ -39,8 +39,7 @@ vk.updates.on('message_new', async (context: any, next: any) => {
 	group_id = group_id ? group_id : Number(await Group_Id_Get(token))
 	const pk_counter_st = await Counter_PK_Module(context)
 	if (pk_counter_st) { return await next(); }
-	const chat_ch = await Chat_Cleaner(context)
-	if (chat_ch) { return await next(); }
+	if (await Is_Chat_Checker(context) == true ) { return next(); }
 	const date_page_check = await Data_Registration_Page_Detector(context)
 	if (!date_page_check) { return await next(); }
 	const user_check = await prisma.account.findFirst({ where: { idvk: context.senderId } })
@@ -108,6 +107,7 @@ vk.updates.on('message_event', async (context: any, next: any) => {
 vk.updates.start().then(async () => {
 	await Logger(`(system) ~ running succes by <system> №0`)
 	await Start_Worker_API_Bot()
+	await Blank_Inactivity()
 }).catch(console.error);
 
 setInterval(Worker_Checker, 86400000);

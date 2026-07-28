@@ -70,7 +70,8 @@ export async function Logger(text: String) {
     console.log(`[${project_name}] --> ${text} <-- (${new Date().toLocaleString("ru"/*, options*/)})`)
 }
 
-export async function Send_Message(idvk: number, message: string, keyboard?: Keyboard, attachment?: string) {
+export async function Send_Message(idvk: number | bigint, message: string, keyboard?: Keyboard, attachment?: string) {
+    idvk = Number(idvk)
     message = message ? message : 'invalid message'
     try {
         if (!attachment && !keyboard) { await vk.api.messages.send({ peer_id: idvk, random_id: 0, message: `${message}` } ) }
@@ -221,18 +222,19 @@ export async function User_Info(context: any) {
     return userData
 }
 
-export async function Chat_Cleaner(context: any) {
-    if (context.peerType == 'chat') { 
-		/*try { 
+export async function Is_Chat_Checker(context: any) {
+    if (context.peerType === 'chat' && context.peerId !== context.senderId) { 
+        /*try { 
 			await vk.api.messages.delete({'peer_id': context.peerId, 'delete_for_all': 1, 'cmids': context.conversationMessageId, 'group_id': group_id})
 			await Logger(`(public chat) ~ received a message from the <user> #${context.senderId} and was deleted by <system> №0`)
 		} catch (error) { 
 			await Logger(`(public chat) ~ received a message from the <user> #${context.senderId} and wasn't deleted by <system> №0`)
 		}  */
-		return true
-	}
+        return true
+    }
     return false
 }
+
 export interface Match {
     id: number,
     text: string,
@@ -533,10 +535,11 @@ export async function getTagDisplaySettings(userId: number): Promise<{ mode: str
 }
 
 export async function formatBlankWithTags(
-    userId: number,
+    userId: number | bigint,
     blankId: number,
     baseText: string
 ): Promise<{ text: string; showTagsButton: boolean; tagsText: string }> {
+    userId = Number(userId)
     const settings = await getTagDisplaySettings(userId);
     const tags = await getTagsForBlank(blankId);
     

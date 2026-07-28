@@ -11,7 +11,8 @@ import {
     Parser_IDVK, Researcher_Better_Blank, Researcher_Better_Blank_Target_Old, 
     Send_Message, User_Banned, User_Info, isAgeVerified, 
     getTagsForBlank,
-    formatBlankWithTags
+    formatBlankWithTags,
+    Is_Chat_Checker
 } from "./module/helper";
 import { abusivelist, Censored_Activation, Censored_Activation_Pro } from "./module/blacklist";
 import { Account, Blank, Mail } from "@prisma/client";
@@ -37,7 +38,7 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
     
     // ==================== ГЛАВНОЕ МЕНЮ ====================
     hearManager.hear(/!спутник|!Спутник/, async (context: any) => {
-        if (context.peerType == 'chat') { return }
+        if (await Is_Chat_Checker(context) == true ) { return; }
         group_id_now = group_id_now ? group_id_now : Number(await Group_Id_Get(token))
         const user_check = await prisma.account.findFirst({ where: { idvk: context.senderId } })
         if (!user_check) { return }
@@ -74,7 +75,7 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
 
     // ==================== МЕНЮ ПЛАГИНОВ ====================
     hearManager.hear(/🔧 Плагины|!плагин|!Плагин/, async (context: any) => {
-        if (context.peerType == 'chat') { return }
+        if (await Is_Chat_Checker(context) == true ) { return; }
         const user_check = await prisma.account.findFirst({ where: { idvk: context.senderId } })
         if (!user_check) { return }
         await Online_Set(context)
@@ -118,7 +119,7 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
 
     // ==================== ТЕГАТОР — ЗАПУСК ПОИСКА ПО КНОПКЕ ====================
     hearManager.hear(/🚀 Поехали|!поехали/, async (context: any) => {
-        if (context.peerType == 'chat') { return }
+        if (await Is_Chat_Checker(context) == true ) { return; }
         const user_check = await prisma.account.findFirst({ where: { idvk: context.senderId } })
         if (!user_check) { return }
         const blank_check = await prisma.blank.findFirst({ where: { id_account: user_check.id } })
@@ -279,7 +280,7 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
 
     // ==================== АРХИВ (заблокирован) ====================
     hearManager.hear(/⚰ Архив 🔒/, async (context: any) => {
-        if (context.peerType == 'chat') { return }
+        if (await Is_Chat_Checker(context) == true ) { return; }
         const user_check = await prisma.account.findFirst({ where: { idvk: context.senderId } })
         if (!user_check) { return }
         
@@ -302,7 +303,7 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
 
     // ==================== СНАЙПЕР ====================
     hearManager.hear(/🎯 Снайпер|!снайпер|!Снайпер/, async (context: any) => {
-        if (context.peerType == 'chat') { return }
+        if (await Is_Chat_Checker(context) == true ) { return; }
         const user_check = await prisma.account.findFirst({ where: { idvk: context.senderId } })
         const blank_check = await prisma.blank.findFirst({ where: { id_account: user_check?.id } })
         if (!user_check) { return }
@@ -561,7 +562,7 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
 
     // ==================== АРХИВ (для донатеров) ====================
     hearManager.hear(/⚰ Архив|!архив|!Архив/, async (context: any) => {
-        if (context.peerType == 'chat') { return }
+        if (await Is_Chat_Checker(context) == true ) { return; }
         const user_check = await prisma.account.findFirst({ where: { idvk: context.senderId } })
         const blank_check = await prisma.blank.findFirst({ where: { id_account: user_check?.id } })
         if (!user_check) { return }
@@ -654,7 +655,7 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
 
     // ==================== ПОЧТА ====================
     hearManager.hear(/📬 Почта|📪 Почта|!почта|!Почта/, async (context: any) => {
-        if (context.peerType == 'chat') { return }
+        if (await Is_Chat_Checker(context) == true ) { return; }
         const user_check = await prisma.account.findFirst({ where: { idvk: context.senderId } })
         if (!user_check) { return }
         const blank_check = await prisma.blank.findFirst({ where: { id_account: user_check?.id } })
@@ -738,7 +739,7 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
 
     // ==================== РАНДОМ ====================
     hearManager.hear(/🎲 Рандом|!рандом|!Рандом/, async (context: any) => {
-        if (context.peerType == 'chat') { return }
+        if (await Is_Chat_Checker(context) == true ) { return; }
         const user_check = await prisma.account.findFirst({ where: { idvk: context.senderId } })
         const blank_check = await prisma.blank.findFirst({ where: { id_account: user_check?.id } })
         if (!user_check) { return }
@@ -861,7 +862,7 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
 
     // ==================== ПОИСК ====================
     hearManager.hear(/🔍 Поиск|!поиск|!Поиск/, async (context: any) => {
-        if (context.peerType == 'chat') { return }
+        if (await Is_Chat_Checker(context) == true ) { return; }
         const user_check = await prisma.account.findFirst({ where: { idvk: context.senderId } })
         const blank_check = await prisma.blank.findFirst({ where: { id_account: user_check?.id } })
         if (!user_check) { return }
@@ -984,7 +985,7 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
 
     // ==================== БРАУЗЕР ====================
     hearManager.hear(/🌐 Браузер|!браузер|!Браузер/, async (context: any) => {
-        if (context.peerType == 'chat') { return }
+        if (await Is_Chat_Checker(context) == true ) { return; }
         const user_check = await prisma.account.findFirst({ where: { idvk: context.senderId } })
         const blank_check = await prisma.blank.findFirst({ where: { id_account: user_check?.id } })
         if (!user_check) { return }
@@ -1112,7 +1113,7 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
 
     // ==================== АНКЕТА ====================
     hearManager.hear(/📃 Моя анкета|!анкета|!Анкета/, async (context: any) => {
-        if (context.peerType == 'chat') { return }
+        if (await Is_Chat_Checker(context) == true ) { return; }
         const user_check = await prisma.account.findFirst({ where: { idvk: context.senderId } })
         if (!user_check) { return }
         const banned_me = await User_Banned(context)
@@ -1233,7 +1234,7 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
 
     // ==================== УДАЛЕНИЕ АНКЕТЫ ====================
     hearManager.hear(/⛔Удалить|!удалить/, async (context: any) => {
-        if (context.peerType == 'chat') { return }
+        if (await Is_Chat_Checker(context) == true ) { return; }
         const user_check = await prisma.account.findFirst({ where: { idvk: context.senderId } })
         if (!user_check) { return }
         const banned_me = await User_Banned(context)
@@ -1260,7 +1261,7 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
 
     // ==================== ИЗМЕНЕНИЕ АНКЕТЫ ====================
     hearManager.hear(/✏Изменить|!изменить/, async (context: any) => {
-        if (context.peerType == 'chat') { return }
+        if (await Is_Chat_Checker(context) == true ) { return; }
         const user_check = await prisma.account.findFirst({ where: { idvk: context.senderId } })
         if (!user_check) { return }
         const banned_me = await User_Banned(context)
@@ -1334,7 +1335,7 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
 
     // ==================== ЦЕНЗУРА ====================
     hearManager.hear(/⚙ Цензура|!цензура|!Цензура/, async (context: any) => {
-        if (context.peerType == 'chat') { return }
+        if (await Is_Chat_Checker(context) == true ) { return; }
         const user_check = await prisma.account.findFirst({ where: { idvk: context.senderId } })
         if (!user_check) { return }
         const banned_me = await User_Banned(context)
@@ -1350,7 +1351,7 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
 
     // ==================== ПРАВА (админ) ====================
     hearManager.hear(/!права|!Права/, async (context) => {
-        if (context.peerType == 'chat') { return }
+        if (await Is_Chat_Checker(context) == true ) { return; }
         if (context.isOutbox == false && (context.senderId == root || await Accessed(context) != 'user') && context.text) {
             const target: number = Number(await Parser_IDVK(context.text)) || 0
             if (target > 0) {
@@ -1373,7 +1374,7 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
 
     // ==================== МОДЕРАЦИЯ ====================
     hearManager.hear(/⚖ Модерация|!модерация|!Модерация/, async (context: any) => {
-        if (context.peerType == 'chat') { return }
+        if (await Is_Chat_Checker(context) == true ) { return; }
         const user_check = await prisma.account.findFirst({ where: { idvk: context.senderId } })
         if (!user_check) { return }
         await Online_Set(context)
@@ -1437,7 +1438,7 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
 
     // ==================== БАН (админ) ====================
     hearManager.hear(/!бан|!Бан/, async (context) => {
-        if (context.peerType == 'chat') { return }
+        if (await Is_Chat_Checker(context) == true ) { return; }
         if (context.isOutbox == false && (context.senderId == root || await Accessed(context) != 'user') && context.text) {
             const target = await Parser_IDVK(context.text)
             if (!target) { return }
@@ -1464,7 +1465,7 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
 
     // ==================== ДОНАТЕР (админ) ====================
     hearManager.hear(/!донатер|!Донатер/, async (context) => {
-        if (context.peerType == 'chat') { return }
+        if (await Is_Chat_Checker(context) == true ) { return; }
         if (context.isOutbox == false && (context.senderId == root || await Accessed(context) != 'user') && context.text) {
             const target = await Parser_IDVK(context.text)
             if (!target) { return }
@@ -1486,14 +1487,14 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
 
     // ==================== БАНХАММЕР ====================
     hearManager.hear(/☠ Банхаммер|!чс|!Чс/, async (context) => {
-        if (context.peerType == 'chat') { return }
+        if (await Is_Chat_Checker(context) == true ) { return; }
         await BlackList_Printer(context)
         await Keyboard_Index(context, `⌛ Туда их всех, не так ли?!`)
     })
 
     // ==================== ЕНОТИК (бэкап) ====================
     hearManager.hear(/!енотик/, async (context: any) => {
-        if (context.peerType == 'chat') { return }
+        if (await Is_Chat_Checker(context) == true ) { return; }
         const user_check = await prisma.account.findFirst({ where: { idvk: context.senderId } })
         if (!user_check) { return }
         if (context.senderId != root && user_check.id_role != 2) { return }
@@ -1510,13 +1511,13 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
 
     // ==================== ТЕГИ — ОБРАБОТЧИК ПАГИНАЦИИ ====================
     hearManager.hear(/tag_page/, async (context: any) => {
-        if (context.peerType == 'chat') { return }
+        if (await Is_Chat_Checker(context) == true ) { return; }
         await handleTagPage(context, context.eventPayload);
     })
 
     // ==================== ТЕГИ — НАСТРОЙКА ПРЕДПОЧТЕНИЙ (что искать) ====================
     hearManager.hear(/tagator_research_config_like/, async (context: any) => {
-        if (context.peerType == 'chat') { return }
+        if (await Is_Chat_Checker(context) == true ) { return; }
         const user_check = await prisma.account.findFirst({ where: { idvk: context.senderId } })
         if (!user_check) { return }
         
@@ -1583,7 +1584,7 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
 
     // ==================== ТЕГИ — НАСТРОЙКА ИСКЛЮЧЕНИЙ (что НЕ искать) ====================
     hearManager.hear(/tagator_research_config_unlike/, async (context: any) => {
-        if (context.peerType == 'chat') { return }
+        if (await Is_Chat_Checker(context) == true ) { return; }
         const user_check = await prisma.account.findFirst({ where: { idvk: context.senderId } })
         if (!user_check) { return }
         
@@ -1624,7 +1625,7 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
 
     // ==================== ТЕГИ — СБРОС ====================
     hearManager.hear(/tagator_research_config_reset/, async (context: any) => {
-        if (context.peerType == 'chat') { return }
+        if (await Is_Chat_Checker(context) == true ) { return; }
         const user_check = await prisma.account.findFirst({ where: { idvk: context.senderId } })
         if (!user_check) { return }
         
@@ -1642,7 +1643,7 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
 
     // ==================== ТЕГАТОР — МЕНЮ ====================
     hearManager.hear(/🌐 Тегатор|!тегатор|!Тегатор/, async (context: any) => {
-        if (context.peerType == 'chat') { return }
+        if (await Is_Chat_Checker(context) == true ) { return; }
         const user_check = await prisma.account.findFirst({ where: { idvk: context.senderId } })
         if (!user_check) { return }
         
@@ -1697,7 +1698,7 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
 
     // ==================== ТЕГИ — ВОЗРАСТ (обработчики) ====================
     hearManager.hear(/age_confirm_yes|age_confirm_no/, async (context: any) => {
-        if (context.peerType == 'chat') { return }
+        if (await Is_Chat_Checker(context) == true ) { return; }
         // Обрабатывается в age_verification.ts через payload
         // Но здесь мы просто ловим, чтобы не было ошибок
         await Logger(`(age) ~ callback received: ${context.eventPayload?.command}`);
@@ -1705,14 +1706,14 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
 
     // ==================== ТЕГИ — РОМАНТИКА (обработчики) ====================
     hearManager.hear(/romance_male|romance_female|romance_both|romance_skip/, async (context: any) => {
-        if (context.peerType == 'chat') { return }
+        if (await Is_Chat_Checker(context) == true ) { return; }
         // Обрабатывается в romance_preference.ts через payload
         await Logger(`(romance) ~ callback received: ${context.eventPayload?.command}`);
     })
 
 	// ==================== НАСТРОЙКА ТЕГОВ АНКЕТЫ (текстовая кнопка) ====================
 	hearManager.hear(/🧲Настроить теги|!тегианкеты/, async (context: any) => {
-		if (context.peerType == 'chat') { return }
+		if (await Is_Chat_Checker(context) == true ) { return; }
 		
 		const user_check = await prisma.account.findFirst({ where: { idvk: context.senderId } })
 		if (!user_check) { return }
@@ -1744,7 +1745,7 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
 
     // ==================== НАСТРОЙКА ОТОБРАЖЕНИЯ ТЕГОВ (текстовая кнопка) ====================
     hearManager.hear(/⚙ Отображение|!настройкитегов/, async (context: any) => {
-        if (context.peerType == 'chat') { return }
+        if (await Is_Chat_Checker(context) == true ) { return; }
         
         const user_check = await prisma.account.findFirst({ where: { idvk: context.senderId } })
         if (!user_check) { return }
@@ -1788,7 +1789,7 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
 
     // ==================== КОСМОИНСТРУКЦИЯ (заглушка) ====================
     hearManager.hear(/🚀 Космоинструкция/, async (context: any) => {
-        if (context.peerType == 'chat') { return }
+        if (await Is_Chat_Checker(context) == true ) { return; }
         await context.send(
             `🚀 КОСМОИНСТРУКЦИЯ ПО СПУТНИКУ\n\n` +
             `📡 ЧТО ТАКОЕ СПУТНИК?\n` +
