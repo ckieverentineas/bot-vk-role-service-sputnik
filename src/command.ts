@@ -1127,7 +1127,7 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
             await Logger(`(private chat) ~ starting creation self blank by <user> №${context.senderId}`)
             while (ender) {
                 let censored = user_check.censored ? await Censored_Activation_Pro(text_input) : text_input
-                const corrected: any = await context.question(`🧷 У вас еще нет анкеты, введите анкету от 30 до 3500 символов, английские символы запрещены: \n 💡Вы можете указать: пол, возраст, минимальный порог строк, желаемые жанры или же сюжет... другие нюансы.\n📝 Сейчас заполнено:\n${censored}\n\n${status_check}`,
+                const corrected: any = await context.question(`🧷 У вас еще нет анкеты, введите анкету от 30 до 3000 символов, английские символы запрещены: \n 💡Вы можете указать: пол, возраст, минимальный порог строк, желаемые жанры или же сюжет... другие нюансы.\n📝 Сейчас заполнено:\n${censored}\n\n${status_check}`,
                     {	
                         keyboard: Keyboard.builder()
                         .textButton({ label: '!сохранить', payload: { command: 'student' }, color: 'secondary' })
@@ -1148,7 +1148,7 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
                         return 
                     } else {
                         text_input = await Blank_Cleaner(corrected.text)
-                        text_input = text_input.length < 3600 ? text_input : text_input.slice(0,3600)
+                        text_input = text_input.length < 3000 ? text_input : text_input.slice(0,3000)
                         status_check = `⚠ В анкете зарегистрировано ${text_input?.length} из ${corrected.text?.length} введенных вами символов, убедитесь в корректном отображении анкеты!`
                     }
                 }
