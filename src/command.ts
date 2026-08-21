@@ -719,8 +719,8 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
             if (corrected.text == '👍' || corrected.text == '!лайк') {
                 const mail_skip = await prisma.mail.update({ where: { id: selector.id }, data: { read: true, status: true } })
                 mail_build.splice(target, 1)
-                await Send_Message(account_to.idvk, `🔊 Недавно вам понравилась анкета #${blank_from_check.id}, знайте, что это взаимно на вашу анкету #${blank_to_check.id}.\n Скорее пишите друг другу в личные сообщения и ловите флешбеки вместе, станьте врагами уже сегодня с https://vk.com/id${account_from.idvk} !`)
-                await Send_Message(account_from.idvk, `🔊 Недавно вам понравилась анкета #${blank_to_check.id}, знайте, что это взаимно на вашу анкету #${blank_from_check.id}.\n Скорее пишите друг другу в личные сообщения и ловите флешбеки вместе, станьте врагами уже сегодня с https://vk.com/id${account_to.idvk} !`)
+                await Send_Message(account_to.idvk, `🔊 Недавно вам понравилась анкета #${blank_from_check.id}, знайте, что это взаимно на вашу анкету #${blank_to_check.id}.\n Скорее пишите друг другу в личные сообщения и решайте, во что ввязались на этот раз с https://vk.com/id${account_from.idvk}`)
+                await Send_Message(account_from.idvk, `🔊 Недавно вам понравилась анкета #${blank_to_check.id}, знайте, что это взаимно на вашу анкету #${blank_from_check.id}.\n Скорее пишите друг другу в личные сообщения и решайте, во что ввязались на этот раз с https://vk.com/id${account_to.idvk}`)
                 await Logger(`(private chat) ~ clicked like for <blank> #${blank_to_check.id} by <user> №${context.senderId}`)
                 const ans_selector = `🌐 Анкеты №${blank_from_check.id} + №${blank_to_check.id} = [ролевики никогда]!`
                 await Send_Message(chat_id, ans_selector)
@@ -1127,7 +1127,7 @@ export function commandUserRoutes(hearManager: HearManager<IQuestionMessageConte
             await Logger(`(private chat) ~ starting creation self blank by <user> №${context.senderId}`)
             while (ender) {
                 let censored = user_check.censored ? await Censored_Activation_Pro(text_input) : text_input
-                const corrected: any = await context.question(`🧷 У вас еще нет анкеты, введите анкету от 30 до 3000 символов, английские символы запрещены: \n 💡Вы можете указать: пол, возраст, минимальный порог строк, желаемые жанры или же сюжет... другие нюансы.\n📝 Сейчас заполнено:\n${censored}\n\n${status_check}`,
+                const corrected: any = await context.question(`🧷 У вас еще нет анкеты, введите анкету от 30 до 3000 символов, английские символы запрещены: \n💡Вы можете указать: пол, возраст, минимальный порог строк, желаемые жанры или же сюжет... другие нюансы.\n📝 Сейчас заполнено:\n${censored}\n\n${status_check}`,
                     {	
                         keyboard: Keyboard.builder()
                         .textButton({ label: '!сохранить', payload: { command: 'student' }, color: 'secondary' })
